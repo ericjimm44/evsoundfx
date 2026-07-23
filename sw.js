@@ -1,5 +1,12 @@
-/* EV Roar — offline-first service worker */
-const CACHE = "ev-roar-v2";
+/* EV Roar — offline-capable service worker.
+   Strategy:
+   - App shell (html/css/js/manifest/pack.json): NETWORK-FIRST with cache
+     fallback, so every deploy shows up on the next refresh while the app
+     still works offline.
+   - Sound files (samples/*.wav etc): CACHE-FIRST — they're immutable
+     (new packs use new filenames), so never re-download them.
+*/
+const CACHE = "ev-roar-v3";
 const ASSETS = [
   ".",
   "index.html",
@@ -27,29 +34,29 @@ self.addEventListener("activate", (e) => {
   );
 });
 
-/* Cache-first for our own assets; network-first for samples/ so newly
-   uploaded sound packs are picked up (falling back to cache offline). */
+function networkFirst(request) {
+  return fetch(request).then((res) => {
+    const copy = res.clone();
+    caches.open(CACHE).then((c) => c.put(request, copy)).catch(() => {});
+    return res;
+  }).catch(() => caches.match(request).then((hit) => hit || caches.match("index.html")));
+}
+
+function cacheFirst(request) {
+  return caches.match(request).then((hit) =>
+    hit ||
+    fetch(request).then((res) => {
+      const copy = res.clone();
+      caches.open(CACHE).then((c) => c.put(request, copy)).catch(() => {});
+      return res;
+    })
+  );
+}
+
 self.addEventListener("fetch", (e) => {
   const { request } = e;
   if (request.method !== "GET") return;
-  if (new URL(request.url).pathname.includes("/samples/")) {
-    e.respondWith(
-      fetch(request).then((res) => {
-        const copy = res.clone();
-        caches.open(CACHE).then((c) => c.put(request, copy)).catch(() => {});
-        return res;
-      }).catch(() => caches.match(request))
-    );
-    return;
-  }
-  e.respondWith(
-    caches.match(request).then((hit) =>
-      hit ||
-      fetch(request).then((res) => {
-        const copy = res.clone();
-        caches.open(CACHE).then((c) => c.put(request, copy)).catch(() => {});
-        return res;
-      }).catch(() => caches.match("index.html"))
-    )
-  );
+  const path = new URL(request.url).pathname;
+  const isSampleAudio = path.includes("/samples/") && !path.endsWith("pack.json");
+  e.respondWith(isSampleAudio ? cacheFirst(request) : networkFirst(request));
 });
