@@ -133,7 +133,7 @@ body { min-height: 100%; }
 .src-off { color: var(--dim); }
 
 /* Voices */
-.voices { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; }
+.voices { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 12px; }
 .voice {
   cursor: pointer; border: 1px solid var(--line); border-radius: 16px;
   background: linear-gradient(180deg, var(--panel), var(--panel2));
@@ -148,6 +148,8 @@ body { min-height: 100%; }
   box-shadow: 0 0 0 1px var(--accent), 0 8px 26px rgba(55,224,166,.22);
   background: linear-gradient(180deg, #16332a, #14261f);
 }
+.voice.add-voice { border-style: dashed; color: var(--dim); background: transparent; }
+.voice.add-voice:hover { color: var(--txt); border-color: var(--accent2); }
 
 /* Controls */
 .controls {

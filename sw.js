@@ -1,5 +1,5 @@
 /* EV Roar — offline-first service worker */
-const CACHE = "ev-roar-v1";
+const CACHE = "ev-roar-v2";
 const ASSETS = [
   ".",
   "index.html",
@@ -27,10 +27,21 @@ self.addEventListener("activate", (e) => {
   );
 });
 
-/* Cache-first for our own assets. */
+/* Cache-first for our own assets; network-first for samples/ so newly
+   uploaded sound packs are picked up (falling back to cache offline). */
 self.addEventListener("fetch", (e) => {
   const { request } = e;
   if (request.method !== "GET") return;
+  if (new URL(request.url).pathname.includes("/samples/")) {
+    e.respondWith(
+      fetch(request).then((res) => {
+        const copy = res.clone();
+        caches.open(CACHE).then((c) => c.put(request, copy)).catch(() => {});
+        return res;
+      }).catch(() => caches.match(request))
+    );
+    return;
+  }
   e.respondWith(
     caches.match(request).then((hit) =>
       hit ||

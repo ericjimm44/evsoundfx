@@ -22,10 +22,10 @@
   const VOICES = {
     v8: {
       name: "V8 Muscle", emoji: "🏁",
-      order: 4, mapPow: 1.0, fMin: 30, fMax: 470,
-      sub: 0.9, growl: 0.5, tone: 1.0, noise: 0.5,
+      order: 4, mapPow: 1.0, fMin: 30, fMax: 380,
+      sub: 1.15, growl: 0.5, tone: 1.0, noise: 0.5,
       wave: [0, 1, 0.6, 0.9, 0.35, 0.6, 0.2, 0.4, 0.15, 0.25],
-      bright: 520, brightRpm: 3.2, drive: 0.35, vibrato: 0,
+      bright: 520, brightRpm: 2.6, drive: 0.5, vibrato: 0,
     },
     turbo: {
       name: "Turbo Sport", emoji: "🌀",
@@ -36,15 +36,15 @@
     },
     ev: {
       name: "Spaceship EV", emoji: "🛸",
-      order: 6, mapPow: 1.35, fMin: 90, fMax: 1650,
+      order: 6, mapPow: 1.55, fMin: 90, fMax: 1650,
       sub: 0.3, growl: 0.25, tone: 1.0, noise: 0.12,
       wave: [0, 1, 0.15, 0.5, 0.1, 0.28, 0.08, 0.18],
       bright: 1400, brightRpm: 6.5, drive: 0.12, vibrato: 0.05,
     },
     jet: {
       name: "Jet Turbine", emoji: "✈️",
-      order: 5, mapPow: 1.4, fMin: 120, fMax: 2200,
-      sub: 0.18, growl: 0.15, tone: 0.35, noise: 1.0,
+      order: 5, mapPow: 1.55, fMin: 120, fMax: 2200,
+      sub: 0.18, growl: 0.15, tone: 0.18, noise: 1.0,
       wave: [0, 1, 0.2, 0.35, 0.12, 0.2],
       bright: 1800, brightRpm: 7.5, drive: 0.15, vibrato: 0.03,
     },
@@ -86,6 +86,130 @@
     gpsWatchId: null,
     gpsOk: false,
   };
+
+  /* ---------------------------------------------------------------
+     REAL SAMPLE PACKS — recorded engine loops, either shipped in the
+     repo's samples/ folder (listed in samples/pack.json) or loaded by
+     the user from a file and kept on-device in IndexedDB. Loops are
+     pitch-bent with playbackRate and crossfaded by rpm — the realism
+     pure synthesis can't reach.
+  ---------------------------------------------------------------- */
+  const SMP = { packs: {}, active: null, nodes: [], bus: null };
+
+  async function loadSamplePacks() {
+    try {
+      const res = await fetch("samples/pack.json", { cache: "no-store" });
+      if (res.ok) {
+        const j = await res.json();
+        (j.voices || []).forEach((v) => {
+          if (!v.key || !Array.isArray(v.loops) || !v.loops.length) return;
+          SMP.packs["smp:" + v.key] = {
+            name: v.name || v.key, emoji: v.emoji || "🎧",
+            loops: v.loops.map((l) => ({ rpm: l.rpm || 3000, url: "samples/" + l.file, buffer: null })),
+          };
+        });
+      }
+    } catch (e) { /* no pack yet — fine */ }
+    try {
+      const rows = await idbGetAll();
+      rows.forEach((r) => {
+        SMP.packs["smp:" + r.key] = {
+          name: r.val.name, emoji: "🎧", custom: true,
+          loops: [{ rpm: r.val.rpm || 3000, data: r.val.data, buffer: null }],
+        };
+      });
+    } catch (e) { /* IndexedDB unavailable — fine */ }
+    buildVoiceChips();
+  }
+
+  async function activateSample(key) {
+    const pack = SMP.packs[key];
+    if (!pack || !ctx) return;
+    setStatus("Loading sound…");
+    try {
+      for (const l of pack.loops) {
+        if (l.buffer) continue;
+        const ab = l.data ? l.data.slice(0) : await (await fetch(l.url)).arrayBuffer();
+        l.buffer = await ctx.decodeAudioData(ab);
+      }
+    } catch (e) { setStatus("Couldn't load that sound — check the file/pack.json."); return; }
+    stopSample();
+    pack.loops.slice().sort((a, b) => a.rpm - b.rpm).forEach((l) => {
+      const src = ctx.createBufferSource();
+      src.buffer = l.buffer; src.loop = true;
+      const g = ctx.createGain(); g.gain.value = 0;
+      src.connect(g); g.connect(SMP.bus); src.start();
+      SMP.nodes.push({ src, g, rpm: l.rpm });
+    });
+    SMP.active = key;
+    A.engineBus.gain.setTargetAtTime(0, ctx.currentTime, 0.15);
+    SMP.bus.gain.setTargetAtTime(1, ctx.currentTime, 0.15);
+    setStatus("");
+  }
+
+  function stopSample() {
+    SMP.nodes.forEach((n) => { try { n.src.stop(); } catch (e) {} });
+    SMP.nodes = [];
+    SMP.active = null;
+  }
+
+  function deactivateSample() {
+    if (!SMP.active) return;
+    stopSample();
+    if (!ctx) return;
+    SMP.bus.gain.setTargetAtTime(0, ctx.currentTime, 0.1);
+    A.engineBus.gain.setTargetAtTime(1, ctx.currentTime, 0.15);
+  }
+
+  // Equal-power crossfade between the two loops bracketing current rpm.
+  function applySampleGains(now, tc, load) {
+    const nodes = SMP.nodes;
+    if (!nodes.length) return;
+    const overall = 0.45 + load * 0.55;
+    if (nodes.length === 1) {
+      nodes[0].g.gain.setTargetAtTime(overall, now, tc);
+      return;
+    }
+    let i = 0;
+    while (i < nodes.length - 2 && S.rpm > nodes[i + 1].rpm) i++;
+    const a = nodes[i], b = nodes[i + 1];
+    const t = clamp((S.rpm - a.rpm) / Math.max(1, b.rpm - a.rpm), 0, 1);
+    nodes.forEach((node, j) => {
+      let w = 0;
+      if (j === i) w = Math.cos(t * Math.PI / 2);
+      else if (j === i + 1) w = Math.sin(t * Math.PI / 2);
+      node.g.gain.setTargetAtTime(w * overall, now, tc);
+    });
+  }
+
+  /* IndexedDB — user-loaded sounds survive reloads on this device */
+  function idbOpen() {
+    return new Promise((res, rej) => {
+      const r = indexedDB.open("evroar-sounds", 1);
+      r.onupgradeneeded = () => r.result.createObjectStore("sounds");
+      r.onsuccess = () => res(r.result);
+      r.onerror = () => rej(r.error);
+    });
+  }
+  async function idbPut(key, val) {
+    const db = await idbOpen();
+    return new Promise((res, rej) => {
+      const t = db.transaction("sounds", "readwrite");
+      t.objectStore("sounds").put(val, key);
+      t.oncomplete = () => res();
+      t.onerror = () => rej(t.error);
+    });
+  }
+  async function idbGetAll() {
+    const db = await idbOpen();
+    return new Promise((res, rej) => {
+      const t = db.transaction("sounds", "readonly");
+      const st = t.objectStore("sounds");
+      const kq = st.getAllKeys(), vq = st.getAll();
+      t.oncomplete = () => res(kq.result.map((k, i) => ({ key: k, val: vq.result[i] })));
+      t.onerror = () => rej(t.error);
+    });
+  }
 
   /* ---------------------------------------------------------------
      AUDIO GRAPH
@@ -150,6 +274,12 @@
     A.comp.connect(A.master);
     A.master.connect(ctx.destination);
 
+    // Sample-pack bus — recorded loops skip the synth coloring chain
+    // and go straight to the compressor so they stay natural.
+    SMP.bus = ctx.createGain();
+    SMP.bus.gain.value = 0;
+    SMP.bus.connect(A.comp);
+
     // Main firing oscillator (custom periodic wave, swapped per voice)
     A.osc = ctx.createOscillator();
     A.oscGain = ctx.createGain(); A.oscGain.gain.value = 0.0;
@@ -198,7 +328,7 @@
 
   function applyVoice(key, initial) {
     const v = VOICES[key];
-    if (!ctx) return;
+    if (!ctx || !v) return;
     // periodic wave from harmonic recipe
     const real = new Float32Array(v.wave.length);
     const imag = new Float32Array(v.wave.length);
@@ -230,8 +360,6 @@
   }
 
   function updatePhysics(dt) {
-    const v = VOICES[S.voiceKey];
-
     // Smooth incoming speed
     S.speed += (S.rawSpeed - S.speed) * Math.min(1, dt * 4);
     const accel = (S.speed - S.lastSpeed) / dt; // m/s^2
@@ -279,7 +407,6 @@
     }
     // idle wander
     if (S.rpm < IDLE_RPM + 40) S.rpm = IDLE_RPM + Math.sin(performance.now() / 220) * 18;
-    void v;
   }
 
   function engineRpmFor(speed, gi) {
@@ -288,9 +415,28 @@
 
   function updateAudio() {
     if (!ctx) return;
-    const v = VOICES[S.voiceKey];
     const tc = 0.03; // smoothing time-constant
     const now = ctx.currentTime;
+    const loadS = clamp(S.throttle, 0, 1);
+
+    // Master volume + boost — shared by synth and sample engines
+    const vol = S.volume * (S.boost ? 1.35 : 1.0);
+    A.master.gain.setTargetAtTime(S.power ? vol : 0.0001, now, 0.05);
+    A.comp.ratio.setTargetAtTime(S.boost ? 8 : 3, now, 0.1);
+    A.comp.threshold.setTargetAtTime(S.boost ? -26 : -18, now, 0.1);
+
+    // Real-sample engine: pitch-bend each loop to the current rpm and
+    // crossfade between the loops bracketing it.
+    if (SMP.active) {
+      SMP.nodes.forEach((node) => {
+        node.src.playbackRate.setTargetAtTime(clamp(S.rpm / node.rpm, 0.3, 3.5), now, tc);
+      });
+      applySampleGains(now, tc, loadS);
+      return;
+    }
+
+    const v = VOICES[S.voiceKey];
+    if (!v) return;
 
     // Fundamental firing frequency
     const norm = (S.rpm - IDLE_RPM) / (REDLINE - IDLE_RPM); // 0..1
@@ -320,12 +466,6 @@
     // idle lump only near idle
     A.lumpGain.gain.setTargetAtTime((1 - Math.min(1, norm * 6)) * 0.06, now, 0.1);
     A.lump.frequency.setTargetAtTime(Math.max(6, f0 / 8), now, tc);
-
-    // Master volume + boost
-    const vol = S.volume * (S.boost ? 1.35 : 1.0);
-    A.master.gain.setTargetAtTime(S.power ? vol : 0.0001, now, 0.05);
-    A.comp.ratio.setTargetAtTime(S.boost ? 8 : 3, now, 0.1);
-    A.comp.threshold.setTargetAtTime(S.boost ? -26 : -18, now, 0.1);
     void base;
   }
 
@@ -349,24 +489,53 @@
 
   function buildVoiceChips() {
     const wrap = el("voices");
+    if (!wrap) return;
     wrap.innerHTML = "";
-    VOICE_ORDER.forEach((k) => {
-      const v = VOICES[k];
+    const addChip = (k, name, emoji) => {
       const b = document.createElement("button");
       b.className = "voice" + (k === S.voiceKey ? " active" : "");
       b.dataset.k = k;
-      b.innerHTML = `<span class="v-emoji">${v.emoji}</span><span class="v-name">${v.name}</span>`;
+      b.innerHTML = `<span class="v-emoji">${emoji}</span><span class="v-name">${name}</span>`;
       b.addEventListener("click", () => selectVoice(k));
       wrap.appendChild(b);
-    });
+    };
+    VOICE_ORDER.forEach((k) => addChip(k, VOICES[k].name, VOICES[k].emoji));
+    Object.keys(SMP.packs).forEach((k) => addChip(k, SMP.packs[k].name, SMP.packs[k].emoji));
+    const plus = document.createElement("button");
+    plus.className = "voice add-voice";
+    plus.innerHTML = `<span class="v-emoji">➕</span><span class="v-name">Add sound</span>`;
+    plus.addEventListener("click", () => el("soundFile").click());
+    wrap.appendChild(plus);
   }
 
   function selectVoice(k) {
     S.voiceKey = k;
     document.querySelectorAll(".voice").forEach((b) =>
       b.classList.toggle("active", b.dataset.k === k));
-    if (ctx) applyVoice(k);
+    if (ctx) {
+      if (k.startsWith("smp:")) activateSample(k);
+      else { deactivateSample(); applyVoice(k); }
+    }
     save();
+  }
+
+  async function addSoundFile(file) {
+    if (!file || !ctx) return;
+    try {
+      const data = await file.arrayBuffer();
+      await ctx.decodeAudioData(data.slice(0)); // verify it decodes
+      const key = "my-" + Date.now();
+      const name = (file.name.replace(/\.[^.]+$/, "") || "My sound").slice(0, 18);
+      try { await idbPut(key, { name, rpm: 3000, data }); } catch (e) { /* still usable this session */ }
+      SMP.packs["smp:" + key] = {
+        name, emoji: "🎧", custom: true,
+        loops: [{ rpm: 3000, data, buffer: null }],
+      };
+      buildVoiceChips();
+      selectVoice("smp:" + key);
+    } catch (e) {
+      setStatus("Couldn't read that file — use an MP3/WAV engine loop.");
+    }
   }
 
   /* ---------------------------------------------------------------
@@ -469,7 +638,7 @@
   function load() {
     try {
       const j = JSON.parse(localStorage.getItem("evroar") || "{}");
-      if (j.voiceKey && VOICES[j.voiceKey]) S.voiceKey = j.voiceKey;
+      if (j.voiceKey && (VOICES[j.voiceKey] || j.voiceKey.startsWith("smp:"))) S.voiceKey = j.voiceKey;
       if (typeof j.sport === "boolean") S.sport = j.sport;
       if (typeof j.boost === "boolean") S.boost = j.boost;
       if (j.units) S.units = j.units;
@@ -537,6 +706,11 @@
     el("helpBtn").addEventListener("click", () => {
       const h = el("help"); h.hidden = !h.hidden;
     });
+    el("soundFile").addEventListener("change", (e) => {
+      const f = e.target.files && e.target.files[0];
+      e.target.value = "";
+      addSoundFile(f);
+    });
 
     // restore visual state
     setToggle("modeBtn", S.sport);
@@ -563,6 +737,13 @@
     buildAudio();
     // resume in case suspended
     if (ctx.state === "suspended") ctx.resume();
+    // discover repo sample packs + user sounds, then restore selection
+    loadSamplePacks().then(() => {
+      if (S.voiceKey.startsWith("smp:")) {
+        if (SMP.packs[S.voiceKey]) activateSample(S.voiceKey);
+        else selectVoice("v8");
+      }
+    });
     requestWake();
     lastT = performance.now() / 1000;
     rafId = requestAnimationFrame(frame);

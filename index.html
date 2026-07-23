@@ -51,6 +51,7 @@
 
     <!-- Voice selector -->
     <section class="voices" id="voices" aria-label="Engine voice"></section>
+    <input id="soundFile" type="file" accept="audio/*,.mp3,.wav,.ogg,.m4a" hidden />
 
     <!-- Controls -->
     <section class="controls">
@@ -96,7 +97,14 @@
         <li>Keep this browser tab in the foreground while driving — audio and GPS pause if it's fully backgrounded.</li>
         <li><b>Exterior boost</b> maxes loudness for a Bluetooth speaker mounted outside.</li>
       </ol>
-      <p class="disclaimer">For fun and off-street/track use. Keep it at a safe, legal volume and never let audio distract from driving. Not affiliated with Tesla or any manufacturer.</p>
+      <h2>Want real recorded engine sounds?</h2>
+      <p>The built-in voices are synthesized. For the real thing, add recorded engine loops — they pitch-follow your speed automatically:</p>
+      <ol>
+        <li><b>Quick (this device):</b> tap the <b>➕ Add sound</b> chip and pick an MP3/WAV engine loop. It's stored on-device and appears as a new voice.</li>
+        <li><b>Permanent (every device):</b> put loop files in the repo's <code>samples/</code> folder and list them in <code>samples/pack.json</code>. Multiple loops recorded at different RPMs crossfade for extra realism.</li>
+      </ol>
+      <p>Free, legal sources: <b>freesound.org</b> (filter license "Creative Commons 0"), <b>pixabay.com/sound-effects</b>, the <b>BBC Sound Effects archive</b> (personal use). Search for "V8 engine loop", "engine idle loop", "engine rpm steady". Short seamless loops (1–10 s, constant rpm) work best.</p>
+      <p class="disclaimer">For fun and off-street/track use. Keep it at a safe, legal volume and never let audio distract from driving. Only add sounds you have the rights to use. Not affiliated with Tesla or any manufacturer.</p>
     </div>
   </main>
 

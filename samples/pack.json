@@ -1,0 +1,4 @@
+{
+  "_how": "List real engine loops here and they appear as voices in the app on every device. Put the audio files (MP3/WAV/OGG) in this samples/ folder. Each voice needs one or more loops; several loops recorded at different RPMs crossfade for extra realism. 'rpm' is the engine speed the loop was recorded at — an estimate is fine (idle ~900, cruise ~3000, high ~5500). Example voice: {\"key\": \"mustang\", \"name\": \"Mustang GT\", \"emoji\": \"🐎\", \"loops\": [{\"file\": \"mustang_idle.mp3\", \"rpm\": 900}, {\"file\": \"mustang_mid.mp3\", \"rpm\": 3000}, {\"file\": \"mustang_high.mp3\", \"rpm\": 5500}]}",
+  "voices": []
+}

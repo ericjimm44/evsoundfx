@@ -18,6 +18,19 @@ and every "voice" is free.
 | 🛸 **Spaceship EV** | Sci-fi inverter whine that climbs with speed |
 | ✈️ **Jet Turbine** | Filtered air + rising turbine whine |
 
+## Real recorded sounds (new)
+
+The synth voices are generated from math; for the sound of an *actual* car,
+add **recorded engine loops**:
+
+- **➕ Add sound** chip in the app — load an MP3/WAV from the device; it's
+  kept on-device and pitch-follows your speed.
+- **`samples/` folder** — commit loop files + list them in
+  `samples/pack.json` and they appear as voices on every device. Multiple
+  loops at different RPMs are crossfaded for realism. See
+  [`samples/README.md`](samples/README.md) for the format and free, legal
+  sources (freesound.org CC0, Pixabay, BBC archive).
+
 ## How it works
 
 - **Speed → revs.** GPS speed (`coords.speed`, with a distance/time fallback)
