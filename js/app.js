@@ -67,7 +67,7 @@
   const S = {
     started: false,
     power: true,
-    voiceKey: "smp:v8race", // real recording by default; falls back to synth offline
+    voiceKey: "smp:v8beast", // real recording by default; falls back to synth offline
     sport: false,
     boost: false,
     useGps: false,
@@ -268,10 +268,19 @@
     A.engineBus = ctx.createGain();
     A.engineBus.gain.value = 0.0; // fade in
 
+    // Exterior-boost high-pass: small outdoor Bluetooth speakers can't
+    // reproduce deep bass — cutting it frees headroom for loudness.
+    // At 20 Hz it's effectively bypassed.
+    A.hpf = ctx.createBiquadFilter();
+    A.hpf.type = "highpass";
+    A.hpf.frequency.value = 20;
+    A.hpf.Q.value = 0.7;
+
     A.engineBus.connect(A.shaper);
     A.shaper.connect(A.lpf);
     A.lpf.connect(A.comp);
-    A.comp.connect(A.master);
+    A.comp.connect(A.hpf);
+    A.hpf.connect(A.master);
     A.master.connect(ctx.destination);
 
     // Sample-pack bus — recorded loops get their own tone filter (darker
@@ -440,10 +449,11 @@
     const loadS = clamp(S.throttle, 0, 1);
 
     // Master volume + boost — shared by synth and sample engines
-    const vol = S.volume * (S.boost ? 1.35 : 1.0);
+    const vol = S.volume * (S.boost ? 1.5 : 1.0);
     A.master.gain.setTargetAtTime(S.power ? vol : 0.0001, now, 0.05);
-    A.comp.ratio.setTargetAtTime(S.boost ? 8 : 3, now, 0.1);
-    A.comp.threshold.setTargetAtTime(S.boost ? -26 : -18, now, 0.1);
+    A.comp.ratio.setTargetAtTime(S.boost ? 10 : 3, now, 0.1);
+    A.comp.threshold.setTargetAtTime(S.boost ? -30 : -18, now, 0.1);
+    A.hpf.frequency.setTargetAtTime(S.boost ? 130 : 20, now, 0.1);
 
     // Real-sample engine: pitch-bend each loop to the current rpm and
     // crossfade between the loops bracketing it.
@@ -461,7 +471,7 @@
       // sub-bass body: strongest low in the rev range and on throttle
       SMP.sub.frequency.setTargetAtTime(clamp((S.rpm / 60) * 2, 25, 130), now, tc);
       SMP.subGain.gain.setTargetAtTime(
-        S.power ? (0.05 + loadS * 0.09) * (1 - rev * 0.5) : 0, now, 0.08);
+        S.power && !S.boost ? (0.05 + loadS * 0.09) * (1 - rev * 0.5) : 0, now, 0.08);
       return;
     }
 
@@ -779,6 +789,7 @@
     // discover repo sample packs + user sounds, then restore selection
     loadSamplePacks().then(() => {
       if (SMP.packs[S.voiceKey]) activateSample(S.voiceKey);
+      else if (SMP.packs["smp:v8beast"]) selectVoice("smp:v8beast");
       else if (SMP.packs["smp:v8race"]) selectVoice("smp:v8race");
       else {
         // nothing downloadable (offline first run) — synth keeps sound alive

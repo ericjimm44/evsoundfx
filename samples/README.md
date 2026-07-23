@@ -4,6 +4,8 @@
 
 | Voice | Files | Source | License |
 | --- | --- | --- | --- |
+| 🔥 V8 Beast | `beast_idle/low/mid/high.wav` | ["v8 engine rev" by overmedium (Freesound #651534)](https://freesound.org/people/overmedium/sounds/651534/) — four matched layers cut from one binaural recording | **CC0** (public domain) |
+| 💥 Open Header | `oh_low/high.wav` | ["Open header V8 cars idling and revving" by holderall (Freesound #432508)](https://freesound.org/people/holderall/sounds/432508/) | **CC0** (public domain) |
 | 🏎️ V8 Racer | `race_low/mid/high.wav` | ["racing car engine sound loops" by domasx2](https://opengameart.org/content/racing-car-engine-sound-loops) | **CC0** (public domain) |
 | 🚗 V8 Classic | `classic_low/high.wav` | ["Generic V8 Engine Sound" by DerMeehdrescher / Meehdrescher Studios](https://opengameart.org/content/generic-v8-engine-sound) | **CC-BY-SA 4.0** |
 | 🌀 Turbo Sport | `classic_low.wav` + `turbo_mid/high.wav` | idle: DerMeehdrescher (see V8 Classic); high: ["Car Engine Loop 96kHz" by qubodup](https://opengameart.org/content/car-engine-loop-96khz-4s) (pitch variants baked) | **CC-BY-SA 4.0** + **CC-BY 3.0** |

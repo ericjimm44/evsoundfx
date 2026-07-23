@@ -3,6 +3,26 @@
   "_credits": "race_*.wav: 'racing car engine sound loops' by domasx2, opengameart.org/content/racing-car-engine-sound-loops, CC0. classic_*.wav: 'Generic V8 Engine Sound' by DerMeehdrescher / Meehdrescher Studios, opengameart.org/content/generic-v8-engine-sound, CC-BY-SA 4.0. turbo_*.wav: 'Car Engine Loop 96kHz' by qubodup, opengameart.org/content/car-engine-loop-96khz-4s, CC-BY 3.0 (pitch variants baked). ev_*.wav / jet_whine.wav: 'Sci-Fi Sound Effects Library' by Little Robot Sound Factory (www.littlerobotsoundfactory.com), opengameart.org/content/sci-fi-sound-effects-library, CC-BY 3.0. All loops lightly processed (mono/resample/normalize + loop-seam crossfade).",
   "voices": [
     {
+      "key": "v8beast",
+      "name": "V8 Beast",
+      "emoji": "🔥",
+      "loops": [
+        { "file": "beast_idle.wav", "rpm": 850 },
+        { "file": "beast_low.wav",  "rpm": 1700 },
+        { "file": "beast_mid.wav",  "rpm": 3400 },
+        { "file": "beast_high.wav", "rpm": 5400 }
+      ]
+    },
+    {
+      "key": "openheader",
+      "name": "Open Header",
+      "emoji": "💥",
+      "loops": [
+        { "file": "oh_low.wav",  "rpm": 1100 },
+        { "file": "oh_high.wav", "rpm": 3200 }
+      ]
+    },
+    {
       "key": "v8race",
       "name": "V8 Racer",
       "emoji": "🏎️",
