@@ -157,6 +157,7 @@
     stopSample();
     if (!ctx) return;
     SMP.bus.gain.setTargetAtTime(0, ctx.currentTime, 0.1);
+    SMP.subGain.gain.setTargetAtTime(0, ctx.currentTime, 0.1);
     A.engineBus.gain.setTargetAtTime(1, ctx.currentTime, 0.15);
   }
 
@@ -273,11 +274,27 @@
     A.comp.connect(A.master);
     A.master.connect(ctx.destination);
 
-    // Sample-pack bus — recorded loops skip the synth coloring chain
-    // and go straight to the compressor so they stay natural.
+    // Sample-pack bus — recorded loops get their own tone filter (darker
+    // off-throttle, brighter on it) and a sub-bass layer for body, then
+    // join at the compressor so they stay otherwise natural.
     SMP.bus = ctx.createGain();
     SMP.bus.gain.value = 0;
-    SMP.bus.connect(A.comp);
+    SMP.lpf = ctx.createBiquadFilter();
+    SMP.lpf.type = "lowpass";
+    SMP.lpf.frequency.value = 4000;
+    SMP.lpf.Q.value = 0.5;
+    SMP.bus.connect(SMP.lpf);
+    SMP.lpf.connect(A.comp);
+
+    // deep rpm-tracking sine under the recordings — the chest-thump
+    // that thin source clips are missing
+    SMP.sub = ctx.createOscillator();
+    SMP.sub.type = "sine";
+    SMP.subGain = ctx.createGain();
+    SMP.subGain.gain.value = 0;
+    SMP.sub.connect(SMP.subGain);
+    SMP.subGain.connect(A.comp);
+    SMP.sub.start();
 
     // Main firing oscillator (custom periodic wave, swapped per voice)
     A.osc = ctx.createOscillator();
@@ -431,10 +448,20 @@
     // Real-sample engine: pitch-bend each loop to the current rpm and
     // crossfade between the loops bracketing it.
     if (SMP.active) {
+      // slow multi-sine waver (~±1.5%) so held notes breathe instead of droning
+      const wob = 1 + 0.012 * Math.sin(now * 1.7) + 0.007 * Math.sin(now * 0.53 + 1.3);
       SMP.nodes.forEach((node) => {
-        node.src.playbackRate.setTargetAtTime(clamp(S.rpm / node.rpm, 0.3, 3.5), now, tc);
+        node.src.playbackRate.setTargetAtTime(clamp((S.rpm / node.rpm) * wob, 0.3, 3.5), now, tc);
       });
       applySampleGains(now, tc, loadS);
+
+      const rev = clamp((S.rpm - IDLE_RPM) / (REDLINE - IDLE_RPM), 0, 1);
+      // tone: darker when coasting, opens up on throttle and revs
+      SMP.lpf.frequency.setTargetAtTime(clamp(1100 + rev * 5200 + loadS * 3200, 900, 11000), now, 0.06);
+      // sub-bass body: strongest low in the rev range and on throttle
+      SMP.sub.frequency.setTargetAtTime(clamp((S.rpm / 60) * 2, 25, 130), now, tc);
+      SMP.subGain.gain.setTargetAtTime(
+        S.power ? (0.05 + loadS * 0.09) * (1 - rev * 0.5) : 0, now, 0.08);
       return;
     }
 
