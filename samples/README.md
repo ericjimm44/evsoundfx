@@ -6,7 +6,7 @@
 | --- | --- | --- | --- |
 | 🏎️ V8 Racer | `race_low/mid/high.wav` | ["racing car engine sound loops" by domasx2](https://opengameart.org/content/racing-car-engine-sound-loops) | **CC0** (public domain) |
 | 🚗 V8 Classic | `classic_low/high.wav` | ["Generic V8 Engine Sound" by DerMeehdrescher / Meehdrescher Studios](https://opengameart.org/content/generic-v8-engine-sound) | **CC-BY-SA 4.0** |
-| 🌀 Turbo Sport | `turbo_low/mid/high.wav` | ["Car Engine Loop 96kHz" by qubodup](https://opengameart.org/content/car-engine-loop-96khz-4s) (pitch variants baked) | **CC-BY 3.0** |
+| 🌀 Turbo Sport | `classic_low.wav` + `turbo_mid/high.wav` | idle: DerMeehdrescher (see V8 Classic); high: ["Car Engine Loop 96kHz" by qubodup](https://opengameart.org/content/car-engine-loop-96khz-4s) (pitch variants baked) | **CC-BY-SA 4.0** + **CC-BY 3.0** |
 | 🛸 Spaceship EV | `ev_low.wav`, `ev_hum.wav` | ["Sci-Fi Sound Effects Library" by Little Robot Sound Factory](https://opengameart.org/content/sci-fi-sound-effects-library) — [littlerobotsoundfactory.com](https://www.littlerobotsoundfactory.com) | **CC-BY 3.0** |
 | ✈️ Jet Turbine | `ev_low.wav`, `jet_whine.wav` | ["Sci-Fi Sound Effects Library" by Little Robot Sound Factory](https://opengameart.org/content/sci-fi-sound-effects-library) — [littlerobotsoundfactory.com](https://www.littlerobotsoundfactory.com) | **CC-BY 3.0** |
 

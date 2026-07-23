@@ -26,9 +26,9 @@
       "name": "Turbo Sport",
       "emoji": "🌀",
       "loops": [
-        { "file": "turbo_low.wav",  "rpm": 1200 },
-        { "file": "turbo_mid.wav",  "rpm": 2900 },
-        { "file": "turbo_high.wav", "rpm": 5800 }
+        { "file": "classic_low.wav", "rpm": 1200 },
+        { "file": "turbo_mid.wav",   "rpm": 3200 },
+        { "file": "turbo_high.wav",  "rpm": 6000 }
       ]
     },
     {

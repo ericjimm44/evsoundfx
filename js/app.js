@@ -56,11 +56,10 @@
   ---------------------------------------------------------------- */
   const IDLE_RPM = 780;
   const REDLINE = 6800;
-  const SHIFT_UP = 6100;      // rpm to upshift (Sport shifts later, set below)
-  const SHIFT_DN = 2100;      // rpm to downshift
-  // engine-rpm added per (m/s) of road speed, per gear. Tuned so 1st tops out
-  // near 15 mph and top gear cruises revvy-but-sane at highway speed.
-  const GEARS = [900, 560, 360, 240, 165, 120];
+  // engine-rpm added per (m/s) of road speed, per gear. Tall gearing:
+  // gentle cruising sits ~1,800–2,300 rpm and 70 mph in top is ~3,300.
+  const GEARS = [640, 430, 300, 210, 150, 80];
+  const SHIFT_COOLDOWN = 600; // ms between shifts
 
   /* ---------------------------------------------------------------
      STATE
@@ -377,18 +376,22 @@
     if (usingGps) {
       // Throttle estimated from acceleration + speed (load).
       const accelN = clamp(accel / 2.2, -1, 1);
-      const target = clamp(0.18 + Math.max(0, accelN) * 0.9 + (accel < -0.4 ? -0.15 : 0), 0, 1);
+      const target = clamp(0.15 + Math.max(0, accelN) * 0.85 + (accel < -0.4 ? -0.12 : 0), 0, 1);
       S.throttle += (target - S.throttle) * Math.min(1, dt * 5);
 
-      // Gearbox: pick engine rpm from speed & current gear, auto-shift.
-      const shiftUp = S.sport ? REDLINE - 250 : SHIFT_UP;
+      // Auto box: short-shift when driven gently, hold gears when pushed,
+      // kick down when you floor it — so revs track how hard you're going,
+      // not just how fast.
+      const gentleUp = S.sport ? 3200 : 2200;
+      const upAt = gentleUp + S.throttle * ((S.sport ? REDLINE - 300 : 5900) - gentleUp);
       let gi = S.gear - 1;
       let rpm = engineRpmFor(S.speed, gi);
 
-      const canShift = (performance.now() - S.lastShift) > 550;
-      if (canShift && rpm > shiftUp && gi < GEARS.length - 1) {
+      const canShift = (performance.now() - S.lastShift) > SHIFT_COOLDOWN;
+      if (canShift && rpm > upAt && gi < GEARS.length - 1) {
         S.gear++; S.lastShift = performance.now();
-      } else if (canShift && engineRpmFor(S.speed, gi) < SHIFT_DN && gi > 0) {
+      } else if (canShift && gi > 0 &&
+                 (rpm < 1250 || (S.throttle > 0.72 && rpm < 2900))) {
         S.gear--; S.lastShift = performance.now();
       }
       rpm = engineRpmFor(S.speed, S.gear - 1);
@@ -559,8 +562,15 @@
       },
       (err) => {
         S.gpsOk = false; setSrc(false);
-        setStatus("Location blocked (" + err.message + "). Using manual throttle.");
-        setToggle("gpsBtn", false); S.useGps = false;
+        if (err.code === 1) {
+          // permission denied — actually off; user must re-enable
+          setStatus("Location blocked — allow location access, or use manual throttle.");
+          setToggle("gpsBtn", false); S.useGps = false;
+        } else {
+          // transient dropout (no signal / timeout) — keep watching,
+          // the next good fix re-enables automatically
+          setStatus("GPS signal lost — waiting…");
+        }
       },
       { enableHighAccuracy: true, maximumAge: 500, timeout: 10000 }
     );
