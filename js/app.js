@@ -499,9 +499,9 @@
       b.addEventListener("click", () => selectVoice(k));
       wrap.appendChild(b);
     };
-    // real recordings first, synth fallbacks after
+    // Only real recordings get chips; the synth engine survives solely as
+    // an invisible fallback for when no sample can be loaded (offline).
     Object.keys(SMP.packs).forEach((k) => addChip(k, SMP.packs[k].name, SMP.packs[k].emoji));
-    VOICE_ORDER.forEach((k) => addChip(k, VOICES[k].name, VOICES[k].emoji));
     const plus = document.createElement("button");
     plus.className = "voice add-voice";
     plus.innerHTML = `<span class="v-emoji">➕</span><span class="v-name">Add sound</span>`;
@@ -639,7 +639,8 @@
   function load() {
     try {
       const j = JSON.parse(localStorage.getItem("evroar") || "{}");
-      if (j.voiceKey && (VOICES[j.voiceKey] || j.voiceKey.startsWith("smp:"))) S.voiceKey = j.voiceKey;
+      // only sample voices are selectable now; old synth keys migrate to default
+      if (j.voiceKey && j.voiceKey.startsWith("smp:")) S.voiceKey = j.voiceKey;
       if (typeof j.sport === "boolean") S.sport = j.sport;
       if (typeof j.boost === "boolean") S.boost = j.boost;
       if (j.units) S.units = j.units;
@@ -740,9 +741,12 @@
     if (ctx.state === "suspended") ctx.resume();
     // discover repo sample packs + user sounds, then restore selection
     loadSamplePacks().then(() => {
-      if (S.voiceKey.startsWith("smp:")) {
-        if (SMP.packs[S.voiceKey]) activateSample(S.voiceKey);
-        else selectVoice("v8");
+      if (SMP.packs[S.voiceKey]) activateSample(S.voiceKey);
+      else if (SMP.packs["smp:v8race"]) selectVoice("smp:v8race");
+      else {
+        // nothing downloadable (offline first run) — synth keeps sound alive
+        selectVoice("v8");
+        setStatus("Offline — using backup engine until sounds can download.");
       }
     });
     requestWake();

@@ -9,14 +9,19 @@ Everything is generated live with the Web Audio API. There are **no sound
 files**, no accounts, and no network calls — so it installs as an offline PWA
 and every "voice" is free.
 
-## Voices
+## Voices — all real recordings
 
 | Voice | Character |
 | --- | --- |
-| 🏁 **V8 Muscle** | Deep combustion rumble with a growl on throttle |
-| 🌀 **Turbo Sport** | Tighter, raspier four/six with turbo air |
-| 🛸 **Spaceship EV** | Sci-fi inverter whine that climbs with speed |
-| ✈️ **Jet Turbine** | Filtered air + rising turbine whine |
+| 🏎️ **V8 Racer** *(default)* | Race-engine recording, three rpm layers crossfading |
+| 🚗 **V8 Classic** | Burbly V8 — decel loop low, accelerating loop high |
+| 🌀 **Turbo Sport** | Real 4-cylinder screamer in three pitch-baked layers |
+| 🛸 **Spaceship EV** | Deep motor throb blending into a smooth sci-fi hum |
+| ✈️ **Jet Turbine** | Low spool-up rumble rising into a bright turbine whine |
+
+Sources and licenses in [`samples/README.md`](samples/README.md). A hidden
+synthesized engine remains as an offline fallback only — it plays when no
+recording can be downloaded, and never appears in the voice list.
 
 ## Real recorded sounds (new)
 
