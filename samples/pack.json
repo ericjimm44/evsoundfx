@@ -46,9 +46,9 @@
       "name": "Turbo Sport",
       "emoji": "🌀",
       "loops": [
-        { "file": "classic_low.wav", "rpm": 1200 },
-        { "file": "turbo_mid.wav",   "rpm": 3200 },
-        { "file": "turbo_high.wav",  "rpm": 6000 }
+        { "file": "wrx_idle.wav", "rpm": 900 },
+        { "file": "wrx_mid.wav",  "rpm": 3100 },
+        { "file": "wrx_high.wav", "rpm": 5200 }
       ]
     },
     {
@@ -65,8 +65,10 @@
       "name": "Jet Turbine",
       "emoji": "✈️",
       "loops": [
-        { "file": "ev_low.wav",    "rpm": 900 },
-        { "file": "jet_whine.wav", "rpm": 3400 }
+        { "file": "jet_idle.wav", "rpm": 850 },
+        { "file": "jet_low.wav",  "rpm": 2400 },
+        { "file": "jet_mid.wav",  "rpm": 4400 },
+        { "file": "jet_high.wav", "rpm": 6500 }
       ]
     }
   ]
