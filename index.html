@@ -1,0 +1,105 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, maximum-scale=1, user-scalable=no" />
+  <title>EV Roar — Engine Sound for your EV</title>
+  <meta name="description" content="Bring your electric car to life. Synthetic engine sound that reacts to your real GPS speed. Runs in the Tesla browser." />
+  <meta name="theme-color" content="#0a0d12" />
+  <link rel="manifest" href="manifest.webmanifest" />
+  <link rel="apple-touch-icon" href="icons/apple-touch-icon.png" />
+  <link rel="icon" href="icons/favicon-64.png" sizes="64x64" type="image/png" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <link rel="stylesheet" href="css/style.css" />
+</head>
+<body>
+  <!-- Start overlay: audio needs a user tap to begin (browser autoplay policy). -->
+  <div id="startScreen" class="start-screen">
+    <div class="start-card">
+      <div class="start-mark" aria-hidden="true">
+        <span class="ring"></span><span class="ring"></span><span class="ring"></span>
+        <span class="bolt">⚡</span>
+      </div>
+      <h1>EV&nbsp;ROAR</h1>
+      <p class="tagline">Give your silent EV a soul. Synthetic engine that breathes with your real speed.</p>
+      <button id="startBtn" class="start-btn">Tap to Start</button>
+      <p class="start-note">Best in landscape on your Tesla screen. Allow location for speed-reactive sound.</p>
+    </div>
+  </div>
+
+  <main id="app" class="app" hidden>
+    <!-- Gauges -->
+    <section class="gauges">
+      <div class="tach">
+        <div class="tach-label">RPM</div>
+        <div id="tachBar" class="tach-bar">
+          <div id="tachFill" class="tach-fill"></div>
+          <div class="tach-redline"></div>
+        </div>
+        <div class="tach-readout"><span id="rpmVal">0</span><small>rpm</small></div>
+        <div id="gearBox" class="gear">N</div>
+      </div>
+
+      <div class="speedo">
+        <div id="speedVal" class="speed-val">0</div>
+        <button id="unitBtn" class="unit-btn" title="Toggle units">MPH</button>
+        <div id="srcPill" class="src-pill src-off">GPS off</div>
+      </div>
+    </section>
+
+    <!-- Voice selector -->
+    <section class="voices" id="voices" aria-label="Engine voice"></section>
+
+    <!-- Controls -->
+    <section class="controls">
+      <button id="powerBtn" class="power-btn is-on" aria-pressed="true">
+        <span class="dot"></span><span class="txt">Engine ON</span>
+      </button>
+
+      <div class="control-row">
+        <label class="ctrl">
+          <span class="ctrl-label">Volume</span>
+          <input id="volume" type="range" min="0" max="100" value="70" />
+        </label>
+      </div>
+
+      <div class="control-row">
+        <label class="ctrl">
+          <span class="ctrl-label" id="throttleLabel">Manual throttle <em>(rev while parked)</em></span>
+          <input id="throttle" type="range" min="0" max="100" value="0" />
+        </label>
+      </div>
+
+      <div class="toggle-row">
+        <button id="modeBtn" class="toggle" data-on="false"><span>Sport mode</span></button>
+        <button id="boostBtn" class="toggle" data-on="false"><span>Exterior boost</span></button>
+        <button id="gpsBtn" class="toggle" data-on="false"><span>Use GPS speed</span></button>
+        <button id="fsBtn" class="toggle" data-on="false"><span>Fullscreen</span></button>
+      </div>
+
+      <p id="status" class="status"></p>
+    </section>
+
+    <footer class="foot">
+      <span>EV&nbsp;Roar · runs entirely in your browser · sound synthesized live</span>
+      <button id="helpBtn" class="link-btn">Tesla setup ▾</button>
+    </footer>
+
+    <div id="help" class="help" hidden>
+      <h2>Running it on your Tesla</h2>
+      <ol>
+        <li>Park (or have a passenger drive) and open the Tesla web browser — the app icon in the launcher, then this page's URL.</li>
+        <li>Tap <b>Tap to Start</b>, then allow <b>location</b> when asked so sound reacts to real speed.</li>
+        <li>Turn on <b>Use GPS speed</b>. Set volume. The Tesla plays browser audio through the car speakers.</li>
+        <li>Keep this browser tab in the foreground while driving — audio and GPS pause if it's fully backgrounded.</li>
+        <li><b>Exterior boost</b> maxes loudness for a Bluetooth speaker mounted outside.</li>
+      </ol>
+      <p class="disclaimer">For fun and off-street/track use. Keep it at a safe, legal volume and never let audio distract from driving. Not affiliated with Tesla or any manufacturer.</p>
+    </div>
+  </main>
+
+  <script src="js/app.js"></script>
+</body>
+</html>
