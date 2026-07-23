@@ -1,5 +1,17 @@
 # Real engine sounds
 
+## Included sounds & credits
+
+| Voice | Files | Source | License |
+| --- | --- | --- | --- |
+| 🏎️ V8 Racer | `race_low/mid/high.wav` | ["racing car engine sound loops" by domasx2](https://opengameart.org/content/racing-car-engine-sound-loops) | **CC0** (public domain) |
+| 🚗 V8 Classic | `classic_low/high.wav` | ["Generic V8 Engine Sound" by DerMeehdrescher / Meehdrescher Studios](https://opengameart.org/content/generic-v8-engine-sound) | **CC-BY-SA 4.0** |
+
+Both sets were lightly processed (a ~12 ms crossfade at the loop seam so they
+cycle without clicks). The CC-BY-SA files remain under
+[CC-BY-SA 4.0](https://creativecommons.org/licenses/by-sa/4.0/) — keep the
+attribution above if you redistribute.
+
 The app's built-in voices are synthesized. Drop **recorded engine loops** in
 this folder to get the real thing — the app pitch-bends each loop to the live
 RPM and crossfades between loops, which sounds far more like an actual car.
