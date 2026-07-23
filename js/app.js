@@ -21,28 +21,28 @@
   ---------------------------------------------------------------- */
   const VOICES = {
     v8: {
-      name: "V8 Muscle", emoji: "🏁",
+      name: "Synth V8", emoji: "🎛️",
       order: 4, mapPow: 1.0, fMin: 30, fMax: 380,
       sub: 1.15, growl: 0.5, tone: 1.0, noise: 0.5,
       wave: [0, 1, 0.6, 0.9, 0.35, 0.6, 0.2, 0.4, 0.15, 0.25],
       bright: 520, brightRpm: 2.6, drive: 0.5, vibrato: 0,
     },
     turbo: {
-      name: "Turbo Sport", emoji: "🌀",
+      name: "Synth Turbo", emoji: "🎛️",
       order: 3, mapPow: 1.05, fMin: 45, fMax: 620,
       sub: 0.55, growl: 0.6, tone: 0.9, noise: 0.85,
       wave: [0, 1, 0.35, 0.7, 0.2, 0.5, 0.18, 0.35, 0.12],
       bright: 700, brightRpm: 5.0, drive: 0.5, vibrato: 0,
     },
     ev: {
-      name: "Spaceship EV", emoji: "🛸",
+      name: "Synth EV", emoji: "🎛️",
       order: 6, mapPow: 1.55, fMin: 90, fMax: 1650,
       sub: 0.3, growl: 0.25, tone: 1.0, noise: 0.12,
       wave: [0, 1, 0.15, 0.5, 0.1, 0.28, 0.08, 0.18],
       bright: 1400, brightRpm: 6.5, drive: 0.12, vibrato: 0.05,
     },
     jet: {
-      name: "Jet Turbine", emoji: "✈️",
+      name: "Synth Jet", emoji: "🎛️",
       order: 5, mapPow: 1.55, fMin: 120, fMax: 2200,
       sub: 0.18, growl: 0.15, tone: 0.18, noise: 1.0,
       wave: [0, 1, 0.2, 0.35, 0.12, 0.2],
@@ -68,7 +68,7 @@
   const S = {
     started: false,
     power: true,
-    voiceKey: "v8",
+    voiceKey: "smp:v8race", // real recording by default; falls back to synth offline
     sport: false,
     boost: false,
     useGps: false,
@@ -499,8 +499,9 @@
       b.addEventListener("click", () => selectVoice(k));
       wrap.appendChild(b);
     };
-    VOICE_ORDER.forEach((k) => addChip(k, VOICES[k].name, VOICES[k].emoji));
+    // real recordings first, synth fallbacks after
     Object.keys(SMP.packs).forEach((k) => addChip(k, SMP.packs[k].name, SMP.packs[k].emoji));
+    VOICE_ORDER.forEach((k) => addChip(k, VOICES[k].name, VOICES[k].emoji));
     const plus = document.createElement("button");
     plus.className = "voice add-voice";
     plus.innerHTML = `<span class="v-emoji">➕</span><span class="v-name">Add sound</span>`;

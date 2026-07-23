@@ -1,6 +1,6 @@
 {
   "_how": "List real engine loops here and they appear as voices in the app on every device. Put the audio files (MP3/WAV/OGG) in this samples/ folder. Each voice needs one or more loops; several loops recorded at different RPMs crossfade for extra realism. 'rpm' is the engine speed the loop was recorded at — an estimate is fine (idle ~900, cruise ~3000, high ~5500).",
-  "_credits": "race_*.wav: 'racing car engine sound loops' by domasx2, opengameart.org/content/racing-car-engine-sound-loops, CC0 (public domain). classic_*.wav: 'Generic V8 Engine Sound' by DerMeehdrescher / Meehdrescher Studios, opengameart.org/content/generic-v8-engine-sound, CC-BY-SA 4.0; loop-seam crossfade applied, shared under the same license.",
+  "_credits": "race_*.wav: 'racing car engine sound loops' by domasx2, opengameart.org/content/racing-car-engine-sound-loops, CC0. classic_*.wav: 'Generic V8 Engine Sound' by DerMeehdrescher / Meehdrescher Studios, opengameart.org/content/generic-v8-engine-sound, CC-BY-SA 4.0. turbo_*.wav: 'Car Engine Loop 96kHz' by qubodup, opengameart.org/content/car-engine-loop-96khz-4s, CC-BY 3.0 (pitch variants baked). ev_*.wav / jet_whine.wav: 'Sci-Fi Sound Effects Library' by Little Robot Sound Factory (www.littlerobotsoundfactory.com), opengameart.org/content/sci-fi-sound-effects-library, CC-BY 3.0. All loops lightly processed (mono/resample/normalize + loop-seam crossfade).",
   "voices": [
     {
       "key": "v8race",
@@ -19,6 +19,34 @@
       "loops": [
         { "file": "classic_low.wav",  "rpm": 1300 },
         { "file": "classic_high.wav", "rpm": 3800 }
+      ]
+    },
+    {
+      "key": "turbo",
+      "name": "Turbo Sport",
+      "emoji": "🌀",
+      "loops": [
+        { "file": "turbo_low.wav",  "rpm": 1200 },
+        { "file": "turbo_mid.wav",  "rpm": 2900 },
+        { "file": "turbo_high.wav", "rpm": 5800 }
+      ]
+    },
+    {
+      "key": "ev",
+      "name": "Spaceship EV",
+      "emoji": "🛸",
+      "loops": [
+        { "file": "ev_low.wav", "rpm": 1000 },
+        { "file": "ev_hum.wav", "rpm": 3200 }
+      ]
+    },
+    {
+      "key": "jet",
+      "name": "Jet Turbine",
+      "emoji": "✈️",
+      "loops": [
+        { "file": "ev_low.wav",    "rpm": 900 },
+        { "file": "jet_whine.wav", "rpm": 3400 }
       ]
     }
   ]

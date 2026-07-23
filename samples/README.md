@@ -6,11 +6,15 @@
 | --- | --- | --- | --- |
 | 🏎️ V8 Racer | `race_low/mid/high.wav` | ["racing car engine sound loops" by domasx2](https://opengameart.org/content/racing-car-engine-sound-loops) | **CC0** (public domain) |
 | 🚗 V8 Classic | `classic_low/high.wav` | ["Generic V8 Engine Sound" by DerMeehdrescher / Meehdrescher Studios](https://opengameart.org/content/generic-v8-engine-sound) | **CC-BY-SA 4.0** |
+| 🌀 Turbo Sport | `turbo_low/mid/high.wav` | ["Car Engine Loop 96kHz" by qubodup](https://opengameart.org/content/car-engine-loop-96khz-4s) (pitch variants baked) | **CC-BY 3.0** |
+| 🛸 Spaceship EV | `ev_low.wav`, `ev_hum.wav` | ["Sci-Fi Sound Effects Library" by Little Robot Sound Factory](https://opengameart.org/content/sci-fi-sound-effects-library) — [littlerobotsoundfactory.com](https://www.littlerobotsoundfactory.com) | **CC-BY 3.0** |
+| ✈️ Jet Turbine | `ev_low.wav`, `jet_whine.wav` | ["Sci-Fi Sound Effects Library" by Little Robot Sound Factory](https://opengameart.org/content/sci-fi-sound-effects-library) — [littlerobotsoundfactory.com](https://www.littlerobotsoundfactory.com) | **CC-BY 3.0** |
 
-Both sets were lightly processed (a ~12 ms crossfade at the loop seam so they
-cycle without clicks). The CC-BY-SA files remain under
+All loops were lightly processed (mono/resample/normalize plus a ~12–15 ms
+crossfade at the loop seam so they cycle without clicks). CC-BY files require
+the attribution above; the CC-BY-SA files remain under
 [CC-BY-SA 4.0](https://creativecommons.org/licenses/by-sa/4.0/) — keep the
-attribution above if you redistribute.
+credits if you redistribute.
 
 The app's built-in voices are synthesized. Drop **recorded engine loops** in
 this folder to get the real thing — the app pitch-bends each loop to the live
