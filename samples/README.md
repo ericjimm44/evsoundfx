@@ -8,7 +8,7 @@
 | 💥 Open Header | `oh_low/high.wav` | ["Open header V8 cars idling and revving" by holderall (Freesound #432508)](https://freesound.org/people/holderall/sounds/432508/) | **CC0** (public domain) |
 | 🏎️ V8 Racer | `race_low/mid/high.wav` | ["racing car engine sound loops" by domasx2](https://opengameart.org/content/racing-car-engine-sound-loops) | **CC0** (public domain) |
 | 🚗 V8 Classic | `classic_low/high.wav` | ["Generic V8 Engine Sound" by DerMeehdrescher / Meehdrescher Studios](https://opengameart.org/content/generic-v8-engine-sound) | **CC-BY-SA 4.0** |
-| 🌀 Turbo Sport | `wrx_idle/mid/high.wav` | ["WRX - Exhaust sounds" by ulose2piranha (Freesound #273334)](https://freesound.org/people/ulose2piranha/sounds/273334/) — real turbo Subaru, idle + rev pulls | **CC0** (public domain) |
+| 🌀 Turbo Sport | `tbody_low/high.wav` + synth whistle | steady 4-cyl body: ["Car Engine Loop 96kHz" by qubodup](https://opengameart.org/content/car-engine-loop-96khz-4s); turbo whistle synthesized live in-app | **CC-BY 3.0** |
 | 🛸 Spaceship EV | `ev_low.wav`, `ev_hum.wav` | ["Sci-Fi Sound Effects Library" by Little Robot Sound Factory](https://opengameart.org/content/sci-fi-sound-effects-library) — [littlerobotsoundfactory.com](https://www.littlerobotsoundfactory.com) | **CC-BY 3.0** |
 | ✈️ Jet Turbine | `jet_idle/low/mid/high.wav` | ["jet_engine" by minian89 (Freesound #152509)](https://freesound.org/people/minian89/sounds/152509/) — four layers cut along one real turbine spool-up | **CC0** (public domain) |
 

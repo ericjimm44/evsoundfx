@@ -103,7 +103,7 @@
         (j.voices || []).forEach((v) => {
           if (!v.key || !Array.isArray(v.loops) || !v.loops.length) return;
           SMP.packs["smp:" + v.key] = {
-            name: v.name || v.key, emoji: v.emoji || "🎧",
+            name: v.name || v.key, emoji: v.emoji || "🎧", whistle: !!v.whistle,
             loops: v.loops.map((l) => ({ rpm: l.rpm || 3000, url: "samples/" + l.file, buffer: null })),
           };
         });
@@ -141,6 +141,7 @@
       SMP.nodes.push({ src, g, rpm: l.rpm });
     });
     SMP.active = key;
+    SMP.whistleOn = !!pack.whistle;
     A.engineBus.gain.setTargetAtTime(0, ctx.currentTime, 0.15);
     SMP.bus.gain.setTargetAtTime(1, ctx.currentTime, 0.15);
     setStatus("");
@@ -158,6 +159,8 @@
     if (!ctx) return;
     SMP.bus.gain.setTargetAtTime(0, ctx.currentTime, 0.1);
     SMP.subGain.gain.setTargetAtTime(0, ctx.currentTime, 0.1);
+    SMP.whistleGain.gain.setTargetAtTime(0, ctx.currentTime, 0.1);
+    SMP.whistleOn = false;
     A.engineBus.gain.setTargetAtTime(1, ctx.currentTime, 0.15);
   }
 
@@ -305,6 +308,22 @@
     SMP.subGain.connect(A.comp);
     SMP.sub.start();
 
+    // Synthesized turbo whistle — a bandpassed tone that glides up with
+    // rpm. Only enabled for voices flagged whistle:true. Because it moves
+    // continuously it adds real turbo character AND masks the body loop's
+    // repetition (a steady drone is what makes a loop obvious).
+    SMP.whistle = ctx.createOscillator();
+    SMP.whistle.type = "triangle";
+    SMP.whistleBP = ctx.createBiquadFilter();
+    SMP.whistleBP.type = "bandpass";
+    SMP.whistleBP.Q.value = 5;
+    SMP.whistleGain = ctx.createGain();
+    SMP.whistleGain.gain.value = 0;
+    SMP.whistle.connect(SMP.whistleBP);
+    SMP.whistleBP.connect(SMP.whistleGain);
+    SMP.whistleGain.connect(A.comp);
+    SMP.whistle.start();
+
     // Main firing oscillator (custom periodic wave, swapped per voice)
     A.osc = ctx.createOscillator();
     A.oscGain = ctx.createGain(); A.oscGain.gain.value = 0.0;
@@ -400,32 +419,30 @@
     }
 
     if (usingGps) {
-      // Throttle estimated from acceleration + speed (load).
+      // Throttle estimated from acceleration (drives tone/loudness + how
+      // long gears are held), but NOT the gear choice itself.
       const accelN = clamp(accel / 2.2, -1, 1);
       const target = clamp(0.15 + Math.max(0, accelN) * 0.85 + (accel < -0.4 ? -0.12 : 0), 0, 1);
       S.throttle += (target - S.throttle) * Math.min(1, dt * 5);
 
-      // Auto box: short-shift when driven gently, hold gears when pushed,
-      // kick down when you floor it — so revs track how hard you're going,
-      // not just how fast.
-      const gentleUp = S.sport ? 3200 : 2200;
-      const upAt = gentleUp + S.throttle * ((S.sport ? REDLINE - 300 : 5900) - gentleUp);
-      let gi = S.gear - 1;
-      let rpm = engineRpmFor(S.speed, gi);
-
-      const canShift = (performance.now() - S.lastShift) > SHIFT_COOLDOWN;
-      if (canShift && rpm > upAt && gi < GEARS.length - 1) {
-        S.gear++; S.lastShift = performance.now();
-      } else if (canShift && gi > 0 &&
-                 (rpm < 1250 || (S.throttle > 0.72 && rpm < 2900))) {
-        S.gear--; S.lastShift = performance.now();
+      // Deterministic gearbox: the gear is a pure function of speed (plus a
+      // gentle throttle influence on how long gears hold), so the revs
+      // always track the speedometer — go faster, revs rise; slow down,
+      // revs fall. Pick the TALLEST gear that keeps revs above a hold
+      // minimum; that minimum rises with throttle (kick-down feel).
+      const holdMin = (S.sport ? 2300 : 1550) + S.throttle * (S.sport ? 3300 : 2200);
+      let idealGear = 1;
+      for (let g = GEARS.length - 1; g >= 0; g--) {
+        if (engineRpmFor(S.speed, g) >= holdMin) { idealGear = g + 1; break; }
       }
-      rpm = engineRpmFor(S.speed, S.gear - 1);
-
-      // brief throttle lift right after a shift (realism)
-      if (performance.now() - S.lastShift < 180) S.throttle *= 0.5;
-
-      S.rpm += (clamp(rpm, IDLE_RPM, REDLINE) - S.rpm) * Math.min(1, dt * 8);
+      // step one gear per cooldown toward the ideal → smooth sequential shifts
+      const canShift = (performance.now() - S.lastShift) > SHIFT_COOLDOWN;
+      if (canShift && idealGear !== S.gear) {
+        S.gear += idealGear > S.gear ? 1 : -1;
+        S.lastShift = performance.now();
+      }
+      const rpm = engineRpmFor(S.speed, S.gear - 1);
+      S.rpm += (clamp(rpm, IDLE_RPM, REDLINE) - S.rpm) * Math.min(1, dt * 6);
     } else {
       // Manual / parked mode — throttle slider directly revs the engine.
       const tgt = S.manualThrottle;
@@ -472,6 +489,16 @@
       SMP.sub.frequency.setTargetAtTime(clamp((S.rpm / 60) * 2, 25, 130), now, tc);
       SMP.subGain.gain.setTargetAtTime(
         S.power && !S.boost ? (0.05 + loadS * 0.09) * (1 - rev * 0.5) : 0, now, 0.08);
+      // turbo whistle: pitch tracks rpm, comes in as you rev/load up
+      if (SMP.whistleOn) {
+        const wf = clamp((S.rpm / 60) * 7, 500, 4800);
+        SMP.whistle.frequency.setTargetAtTime(wf, now, tc);
+        SMP.whistleBP.frequency.setTargetAtTime(wf, now, tc);
+        const wv = clamp((rev * 0.7 + loadS * 0.45) - 0.12, 0, 1) * 0.11;
+        SMP.whistleGain.gain.setTargetAtTime(S.power ? wv : 0, now, 0.06);
+      } else {
+        SMP.whistleGain.gain.setTargetAtTime(0, now, 0.05);
+      }
       return;
     }
 

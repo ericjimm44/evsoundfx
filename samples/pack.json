@@ -45,10 +45,10 @@
       "key": "turbo",
       "name": "Turbo Sport",
       "emoji": "🌀",
+      "whistle": true,
       "loops": [
-        { "file": "wrx_idle.wav", "rpm": 900 },
-        { "file": "wrx_mid.wav",  "rpm": 3100 },
-        { "file": "wrx_high.wav", "rpm": 5200 }
+        { "file": "tbody_low.wav",  "rpm": 1500 },
+        { "file": "tbody_high.wav", "rpm": 4200 }
       ]
     },
     {
