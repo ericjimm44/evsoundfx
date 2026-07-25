@@ -56,9 +56,11 @@
   ---------------------------------------------------------------- */
   const IDLE_RPM = 780;
   const REDLINE = 6800;
-  // engine-rpm added per (m/s) of road speed, per gear. Tall gearing:
-  // gentle cruising sits ~1,800–2,300 rpm and 70 mph in top is ~3,300.
-  const GEARS = [640, 430, 300, 210, 150, 80];
+  // engine-rpm added per (m/s) of road speed, per gear. Evenly spaced
+  // ~1.44 ratio steps (the old set had a 1.88 jump into top, which put an
+  // audible rpm cliff at highway speed). 7 speeds keeps a relaxed
+  // ~3,000 rpm cruise at 70 mph.
+  const GEARS = [640, 445, 310, 216, 150, 105, 73];
   const SHIFT_COOLDOWN = 600; // ms between shifts
 
   /* ---------------------------------------------------------------
@@ -78,10 +80,13 @@
     speed: 0,            // m/s (smoothed)
     rawSpeed: 0,
     lastSpeed: 0,
-    throttle: 0,         // 0..1 estimated load
+    throttle: 0,         // 0..1 estimated load (drives tone — fast)
+    gearLoad: 0,         // 0..1 damped load (drives gear choice — slow)
+    accelHist: [],       // rolling speed samples for a stable accel estimate
     rpm: IDLE_RPM,
     gear: 1,             // 1-indexed
     lastShift: 0,
+    shiftAt: 0,          // timestamp of the last shift (for the shift punch)
     gpsWatchId: null,
     gpsOk: false,
   };
@@ -93,7 +98,7 @@
      pitch-bent with playbackRate and crossfaded by rpm — the realism
      pure synthesis can't reach.
   ---------------------------------------------------------------- */
-  const SMP = { packs: {}, active: null, nodes: [], bus: null };
+  const SMP = { packs: {}, active: null, nodes: [], bus: null, loadToken: 0 };
 
   async function loadSamplePacks() {
     try {
@@ -124,6 +129,9 @@
   async function activateSample(key) {
     const pack = SMP.packs[key];
     if (!pack || !ctx) return;
+    // Guard against overlapping activations: tapping two chips quickly used
+    // to let the slower load finish last and play the wrong voice.
+    const token = ++SMP.loadToken;
     setStatus("Loading sound…");
     try {
       for (const l of pack.loops) {
@@ -131,7 +139,16 @@
         const ab = l.data ? l.data.slice(0) : await (await fetch(l.url)).arrayBuffer();
         l.buffer = await ctx.decodeAudioData(ab);
       }
-    } catch (e) { setStatus("Couldn't load that sound — check the file/pack.json."); return; }
+    } catch (e) {
+      if (token !== SMP.loadToken) return; // superseded; stay quiet
+      // NEVER leave the app silent: fall back to the built-in synth engine
+      // so there is always sound, and say why.
+      setStatus("Couldn't load that sound — using the backup engine.");
+      deactivateSample();
+      applyVoice("v8");
+      return;
+    }
+    if (token !== SMP.loadToken) return; // a newer selection won
     stopSample();
     pack.loops.slice().sort((a, b) => a.rpm - b.rpm).forEach((l) => {
       const src = ctx.createBufferSource();
@@ -148,7 +165,12 @@
   }
 
   function stopSample() {
-    SMP.nodes.forEach((n) => { try { n.src.stop(); } catch (e) {} });
+    SMP.nodes.forEach((n) => {
+      try { n.src.stop(); } catch (e) {}
+      // release the graph edges too, so switching voices repeatedly
+      // doesn't pile up orphaned connections
+      try { n.src.disconnect(); n.g.disconnect(); } catch (e) {}
+    });
     SMP.nodes = [];
     SMP.active = null;
   }
@@ -419,10 +441,28 @@
   function updatePhysics(dt) {
     // Smooth incoming speed
     S.speed += (S.rawSpeed - S.speed) * Math.min(1, dt * 4);
-    const accel = (S.speed - S.lastSpeed) / dt; // m/s^2
-    S.lastSpeed = S.speed;
+
+    // Acceleration measured over a ~1.2 s window. A frame-to-frame delta
+    // is useless here: GPS only reports about once a second, so the
+    // smoothed speed is a staircase and per-frame deltas spike on every
+    // fix — which used to pulse the throttle estimate and make the
+    // gearbox hunt while cruising at a constant speed.
+    S.accelHist.push({ t: performance.now(), v: S.speed });
+    while (S.accelHist.length > 2 && performance.now() - S.accelHist[0].t > 1200) {
+      S.accelHist.shift();
+    }
+    const a0 = S.accelHist[0];
+    const span = (performance.now() - a0.t) / 1000;
+    const accel = span > 0.25 ? (S.speed - a0.v) / span : 0;
 
     const usingGps = S.useGps && S.gpsOk;
+
+    // No fix for a while? Bleed speed off gradually rather than holding a
+    // stale number forever, so a long dropout winds the engine down
+    // naturally instead of freezing the speedo at highway speed.
+    if (usingGps && S.lastFixAt && performance.now() - S.lastFixAt > 4000) {
+      S.rawSpeed = Math.max(0, S.rawSpeed - dt * 1.5);
+    }
 
     if (!S.power) {
       // engine off — glide rpm to 0, throttle 0
@@ -438,21 +478,23 @@
       const target = clamp(0.15 + Math.max(0, accelN) * 0.85 + (accel < -0.4 ? -0.12 : 0), 0, 1);
       S.throttle += (target - S.throttle) * Math.min(1, dt * 5);
 
-      // Deterministic gearbox: the gear is a pure function of speed (plus a
-      // gentle throttle influence on how long gears hold), so the revs
-      // always track the speedometer — go faster, revs rise; slow down,
-      // revs fall. Pick the TALLEST gear that keeps revs above a hold
-      // minimum; that minimum rises with throttle (kick-down feel).
-      const holdMin = (S.sport ? 2300 : 1550) + S.throttle * (S.sport ? 3300 : 2200);
-      let idealGear = 1;
-      for (let g = GEARS.length - 1; g >= 0; g--) {
-        if (engineRpmFor(S.speed, g) >= holdMin) { idealGear = g + 1; break; }
-      }
-      // step one gear per cooldown toward the ideal → smooth sequential shifts
+      // A second, heavily damped load signal drives GEAR choices. Tone can
+      // react fast; gear selection must not, or a single GPS blip shifts.
+      S.gearLoad += (target - S.gearLoad) * Math.min(1, dt * 0.7);
+
+      // Hysteresis gearbox: upshift above one rpm, downshift below a much
+      // lower one. The gap is wider than a gear step, so a shift can never
+      // immediately trigger its own reverse — no hunting at steady speed.
+      const upAt = (S.sport ? 3400 : 2400) + S.gearLoad * (S.sport ? 3200 : 3400);
+      const downAt = (S.sport ? 1700 : 1250) + S.gearLoad * 1500;
+      const curRpm = engineRpmFor(S.speed, S.gear - 1);
       const canShift = (performance.now() - S.lastShift) > SHIFT_COOLDOWN;
-      if (canShift && idealGear !== S.gear) {
-        S.gear += idealGear > S.gear ? 1 : -1;
-        S.lastShift = performance.now();
+      if (canShift) {
+        if (curRpm > upAt && S.gear < GEARS.length) {
+          S.gear++; S.lastShift = performance.now(); S.shiftAt = performance.now();
+        } else if (curRpm < downAt && S.gear > 1) {
+          S.gear--; S.lastShift = performance.now(); S.shiftAt = performance.now();
+        }
       }
       const rpm = engineRpmFor(S.speed, S.gear - 1);
       S.rpm += (clamp(rpm, IDLE_RPM, REDLINE) - S.rpm) * Math.min(1, dt * 6);
@@ -630,11 +672,25 @@
     setStatus("Requesting location…");
     S.gpsWatchId = navigator.geolocation.watchPosition(
       (pos) => {
+        const firstFix = !S.gpsOk;
         S.gpsOk = true;
         setSrc(true);
         let sp = pos.coords.speed; // m/s, may be null
         if (sp == null || isNaN(sp) || sp < 0) sp = deriveSpeedFrom(pos);
-        S.rawSpeed = sp;
+        S.rawSpeed = clamp(sp, 0, 90); // ignore absurd fixes (~200 mph cap)
+        S.lastFixAt = performance.now();
+        // Engaging GPS mid-drive must not start in 1st and climb: that
+        // slammed the engine to redline for a couple of seconds. Snap
+        // straight to a sane gear for the speed we're already doing.
+        if (firstFix) {
+          S.speed = S.rawSpeed;
+          S.accelHist = [];
+          S.gear = 1;
+          for (let g = GEARS.length - 1; g >= 0; g--) {
+            if (engineRpmFor(S.rawSpeed, g) >= 1800) { S.gear = g + 1; break; }
+          }
+          S.rpm = engineRpmFor(S.rawSpeed, S.gear - 1);
+        }
         setStatus("");
       },
       (err) => {
@@ -642,11 +698,15 @@
         if (err.code === 1) {
           // permission denied — actually off; user must re-enable
           setStatus("Location blocked — allow location access, or use manual throttle.");
-          setToggle("gpsBtn", false); S.useGps = false;
+          setToggle("gpsBtn", false);
+          stopGps();               // release the watch and reset the pill
+          S.useGps = false;
         } else {
-          // transient dropout (no signal / timeout) — keep watching,
-          // the next good fix re-enables automatically
-          setStatus("GPS signal lost — waiting…");
+          // Transient dropout (tunnel, cold start). Keep GPS "live" and
+          // keep driving off the last known speed — dropping to idle while
+          // the speedometer still read 60 was worse than coasting. The
+          // next good fix takes over seamlessly.
+          setStatus("GPS signal lost — coasting…");
         }
       },
       { enableHighAccuracy: true, maximumAge: 500, timeout: 10000 }

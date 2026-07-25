@@ -6,13 +6,14 @@
    - Sound files (samples/*.wav etc): CACHE-FIRST — they're immutable
      (new packs use new filenames), so never re-download them.
 */
-const CACHE = "ev-roar-v3";
+const CACHE = "ev-roar-v4";
 const ASSETS = [
   ".",
   "index.html",
   "css/style.css",
   "js/app.js",
   "manifest.webmanifest",
+  "samples/pack.json",
   "icons/favicon-64.png",
   "icons/apple-touch-icon.png",
   "icons/icon-192.png",
@@ -22,9 +23,25 @@ const ASSETS = [
 
 self.addEventListener("install", (e) => {
   e.waitUntil(
-    caches.open(CACHE).then((c) => c.addAll(ASSETS)).then(() => self.skipWaiting())
+    caches.open(CACHE)
+      .then((c) => c.addAll(ASSETS).then(() => precacheSamples(c)))
+      .then(() => self.skipWaiting())
   );
 });
+
+/* Pull every sound listed in pack.json at install time, so ALL voices work
+   offline — not just the ones the user happened to tap while online.
+   Best-effort: a failure here must never block the install. */
+function precacheSamples(cache) {
+  return fetch("samples/pack.json")
+    .then((r) => r.json())
+    .then((j) => {
+      const files = new Set();
+      (j.voices || []).forEach((v) => (v.loops || []).forEach((l) => l.file && files.add(l.file)));
+      return Promise.all([...files].map((f) => cache.add("samples/" + f).catch(() => {})));
+    })
+    .catch(() => {});
+}
 
 self.addEventListener("activate", (e) => {
   e.waitUntil(
