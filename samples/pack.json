@@ -1,44 +1,37 @@
 {
-  "_how": "List real engine loops here and they appear as voices in the app on every device. Put the audio files (MP3/WAV/OGG) in this samples/ folder. Each voice needs one or more loops; several loops recorded at different RPMs crossfade for extra realism. 'rpm' is the engine speed the loop was recorded at — an estimate is fine (idle ~900, cruise ~3000, high ~5500).",
-  "_credits": "race_*.wav: 'racing car engine sound loops' by domasx2, opengameart.org/content/racing-car-engine-sound-loops, CC0. classic_*.wav: 'Generic V8 Engine Sound' by DerMeehdrescher / Meehdrescher Studios, opengameart.org/content/generic-v8-engine-sound, CC-BY-SA 4.0. turbo_*.wav: 'Car Engine Loop 96kHz' by qubodup, opengameart.org/content/car-engine-loop-96khz-4s, CC-BY 3.0 (pitch variants baked). ev_*.wav / jet_whine.wav: 'Sci-Fi Sound Effects Library' by Little Robot Sound Factory (www.littlerobotsoundfactory.com), opengameart.org/content/sci-fi-sound-effects-library, CC-BY 3.0. All loops lightly processed (mono/resample/normalize + loop-seam crossfade).",
+  "_how": "List real engine loops here and they appear as voices in the app on every device. Put the audio files (MP3/WAV/OGG) in this samples/ folder. Each voice needs one or more loops; several loops recorded at different RPMs crossfade for extra realism.",
+  "_rpm_rule": "CRITICAL: 'rpm' is not a label, it is the denominator of the pitch shift (playbackRate = currentRPM / loop.rpm). The RATIO between two loops' rpm values must equal the RATIO of their actual recorded pitches, or the crossfade plays the same engine at two pitches at once. These values were derived by measuring each clip's true firing frequency and are ratio-exact. Do NOT 'spread them out' to cover more revs — that is exactly what caused the 7–12 semitone crossfade dissonance in earlier versions.",
+  "_credits": "classic_*.wav: 'Generic V8 Engine Sound' by DerMeehdrescher / Meehdrescher Studios, opengameart.org/content/generic-v8-engine-sound, CC-BY-SA 4.0. beast_*.wav: 'v8 engine rev' by overmedium, Freesound #651534, CC0. oh_*.wav: 'Open header V8 cars idling and revving' by holderall, Freesound #432508, CC0. tbody_*.wav: 'Car Engine Loop 96kHz' by qubodup, opengameart.org/content/car-engine-loop-96khz-4s, CC-BY 3.0. jet_*.wav: 'jet_engine' by minian89, Freesound #152509, CC0. ev_*.wav: 'Sci-Fi Sound Effects Library' by Little Robot Sound Factory (www.littlerobotsoundfactory.com), opengameart.org/content/sci-fi-sound-effects-library, CC-BY 3.0. All loops rebuilt with pitch-synchronous circular overlap-add (seamless loop point), DC removal, per-cycle jitter and BS.1770 loudness matching to -20 LUFS.",
   "voices": [
+    {
+      "key": "v8classic",
+      "name": "V8 Classic",
+      "emoji": "🚗",
+      "_measured": "classic_low = 46.40 Hz firing, classic_high = 92.84 Hz — exactly 2.00x apart (same engine, one octave up). Previous tags 1300/3800 claimed 2.92x, i.e. a perfect fifth of dissonance at every crossfade. Best tonal source in the pack: rock-stable pitch, harmonics out to 900 Hz.",
+      "loops": [
+        { "file": "classic_low.wav",  "rpm": 1630 },
+        { "file": "classic_high.wav", "rpm": 3260 }
+      ]
+    },
     {
       "key": "v8beast",
       "name": "V8 Beast",
       "emoji": "🔥",
+      "_measured": "65.91 / 72.14 / 92.15 Hz. The set spans only 1.40x but was tagged 850–5400 (6.35x), so every crossfade played the same V8 up to an OCTAVE apart. beast_low dropped: it was within 1.7% of beast_idle, so crossfading them combed rather than varied.",
       "loops": [
-        { "file": "beast_idle.wav", "rpm": 850 },
-        { "file": "beast_low.wav",  "rpm": 1700 },
-        { "file": "beast_mid.wav",  "rpm": 3400 },
-        { "file": "beast_high.wav", "rpm": 5400 }
+        { "file": "beast_idle.wav", "rpm": 1950 },
+        { "file": "beast_mid.wav",  "rpm": 2130 },
+        { "file": "beast_high.wav", "rpm": 2720 }
       ]
     },
     {
       "key": "openheader",
       "name": "Open Header",
       "emoji": "💥",
+      "_measured": "No single firing frequency — a multi-car ambience, so rpm tags only order it by brightness (centroid 594 Hz vs 1412 Hz). Best texture in the pack (crest factor 5.1/8.2 = real exhaust transients).",
       "loops": [
-        { "file": "oh_low.wav",  "rpm": 1100 },
-        { "file": "oh_high.wav", "rpm": 3200 }
-      ]
-    },
-    {
-      "key": "v8race",
-      "name": "V8 Racer",
-      "emoji": "🏎️",
-      "loops": [
-        { "file": "race_low.wav",  "rpm": 1100 },
-        { "file": "race_mid.wav",  "rpm": 2800 },
-        { "file": "race_high.wav", "rpm": 5400 }
-      ]
-    },
-    {
-      "key": "v8classic",
-      "name": "V8 Classic",
-      "emoji": "🚗",
-      "loops": [
-        { "file": "classic_low.wav",  "rpm": 1300 },
-        { "file": "classic_high.wav", "rpm": 3800 }
+        { "file": "oh_low.wav",  "rpm": 1300 },
+        { "file": "oh_high.wav", "rpm": 3300 }
       ]
     },
     {
@@ -46,29 +39,30 @@
       "name": "Turbo Sport",
       "emoji": "🌀",
       "whistle": true,
+      "_measured": "tbody_high was tbody_low resampled by sqrt(2) — the SAME recording, so crossfading the two comb-filtered instead of varying. That was the audible 'it just repeats itself'. Now ships the single body loop; the live turbo whistle carries the rev movement.",
       "loops": [
-        { "file": "tbody_low.wav",  "rpm": 1500 },
-        { "file": "tbody_high.wav", "rpm": 4200 }
-      ]
-    },
-    {
-      "key": "ev",
-      "name": "Spaceship EV",
-      "emoji": "🛸",
-      "loops": [
-        { "file": "ev_low.wav", "rpm": 1000 },
-        { "file": "ev_hum.wav", "rpm": 3200 }
+        { "file": "tbody_low.wav", "rpm": 1940 }
       ]
     },
     {
       "key": "jet",
       "name": "Jet Turbine",
       "emoji": "✈️",
+      "_measured": "Aperiodic turbine noise — perceptual pitch is the spectral centroid (302 / 1455 / 3430 / 4956 Hz). Spacing compressed 0.71x in log terms; for broadband noise that reads as a slightly wider noise band rather than an out-of-tune interval.",
       "loops": [
-        { "file": "jet_idle.wav", "rpm": 850 },
-        { "file": "jet_low.wav",  "rpm": 2400 },
-        { "file": "jet_mid.wav",  "rpm": 4400 },
-        { "file": "jet_high.wav", "rpm": 6500 }
+        { "file": "jet_idle.wav", "rpm": 900 },
+        { "file": "jet_low.wav",  "rpm": 2750 },
+        { "file": "jet_mid.wav",  "rpm": 5100 },
+        { "file": "jet_high.wav", "rpm": 6600 }
+      ]
+    },
+    {
+      "key": "ev",
+      "name": "Spaceship EV",
+      "emoji": "🛸",
+      "_measured": "ev_low (19.45 Hz throb) and ev_hum (~190 Hz whine) are two unrelated sounds 9.7x apart with nothing between them, so crossfading them morphed rather than revved. Ships ev_hum alone; the app's own sub-bass layer supplies the low end.",
+      "loops": [
+        { "file": "ev_hum.wav", "rpm": 2300 }
       ]
     }
   ]

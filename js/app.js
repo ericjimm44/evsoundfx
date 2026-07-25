@@ -1,6 +1,8 @@
 /* =====================================================================
-   EV ROAR — live-synthesized engine sound that reacts to real GPS speed.
-   Vanilla JS + Web Audio API. No sound files, no network, works offline.
+   EV ROAR — recorded engine sound that reacts to real GPS speed.
+   Vanilla JS + Web Audio API. Recorded loops in samples/ are pitch-tracked
+   to live rpm and crossfaded; a synthesized engine remains as an offline
+   fallback. Installs as a PWA and runs fully offline once cached.
    Designed to run in the Tesla browser (Chromium) through the car speakers.
    ===================================================================== */
 
@@ -69,7 +71,7 @@
   const S = {
     started: false,
     power: true,
-    voiceKey: "smp:v8beast", // real recording by default; falls back to synth offline
+    voiceKey: "smp:v8classic", // real recording by default; falls back to synth offline
     sport: false,
     boost: false,
     useGps: false,
@@ -203,7 +205,10 @@
       let w = 0;
       if (j === i) w = Math.cos(t * Math.PI / 2);
       else if (j === i + 1) w = Math.sin(t * Math.PI / 2);
-      node.g.gain.setTargetAtTime(w * overall, now, tc);
+      // fade a badly-stretched loop out rather than let it dominate as a
+      // chipmunk: 0.5 octaves of stretch -> 0.61 gain, 1 octave -> 0.14
+      const sp = Math.exp(-Math.pow((node.stretch || 0) / 0.55, 2) / 2);
+      node.g.gain.setTargetAtTime(w * sp * overall, now, tc);
     });
   }
 
@@ -279,9 +284,13 @@
     A.comp = ctx.createDynamicsCompressor();
     A.comp.threshold.value = -18;
     A.comp.knee.value = 24;
-    A.comp.ratio.value = 3;
-    A.comp.attack.value = 0.004;
-    A.comp.release.value = 0.15;
+    // A 4 ms attack clamped down on exactly the 2–10 ms exhaust pulses that
+    // make a recording sound like a real engine, flattening every voice
+    // toward the same texture. The loops are loudness-matched now, so heavy
+    // compression isn't needed for level control.
+    A.comp.ratio.value = 2;
+    A.comp.attack.value = 0.020;
+    A.comp.release.value = 0.25;
 
     A.lpf = ctx.createBiquadFilter();
     A.lpf.type = "lowpass";
@@ -317,7 +326,14 @@
     SMP.lpf.type = "lowpass";
     SMP.lpf.frequency.value = 4000;
     SMP.lpf.Q.value = 0.5;
-    SMP.bus.connect(SMP.lpf);
+    // Insurance DC-block: shipped loops are DC-free, but a user-loaded sound
+    // with a big DC offset would pump the compressor and eat headroom.
+    SMP.dcBlock = ctx.createBiquadFilter();
+    SMP.dcBlock.type = "highpass";
+    SMP.dcBlock.frequency.value = 18;
+    SMP.dcBlock.Q.value = 0.7;
+    SMP.bus.connect(SMP.dcBlock);
+    SMP.dcBlock.connect(SMP.lpf);
     SMP.lpf.connect(A.comp);
 
     // deep rpm-tracking sine under the recordings — the chest-thump
@@ -523,17 +539,26 @@
     // Master volume + boost — shared by synth and sample engines
     const vol = S.volume * (S.boost ? 1.5 : 1.0);
     A.master.gain.setTargetAtTime(S.power ? vol : 0.0001, now, 0.05);
-    A.comp.ratio.setTargetAtTime(S.boost ? 10 : 3, now, 0.1);
+    A.comp.ratio.setTargetAtTime(S.boost ? 8 : 2, now, 0.1);
     A.comp.threshold.setTargetAtTime(S.boost ? -30 : -18, now, 0.1);
     A.hpf.frequency.setTargetAtTime(S.boost ? 130 : 20, now, 0.1);
 
     // Real-sample engine: pitch-bend each loop to the current rpm and
     // crossfade between the loops bracketing it.
     if (SMP.active) {
-      // slow multi-sine waver (~±1.5%) so held notes breathe instead of droning
-      const wob = 1 + 0.012 * Math.sin(now * 1.7) + 0.007 * Math.sin(now * 0.53 + 1.3);
-      SMP.nodes.forEach((node) => {
-        node.src.playbackRate.setTargetAtTime(clamp((S.rpm / node.rpm) * wob, 0.3, 3.5), now, tc);
+      SMP.nodes.forEach((node, i) => {
+        // per-loop wobble phase, so loops decorrelate instead of moving as one
+        const ph = i * 2.399;
+        const wob = 1 + 0.005 * Math.sin(now * 4.3 + ph)
+                      + 0.004 * Math.sin(now * 1.7 + ph * 1.7)
+                      + 0.003 * Math.sin(now * 0.53 + ph * 2.3);
+        const want = (S.rpm / node.rpm) * wob;
+        // A recording resampled far from 1.0x loses its formants and turns
+        // chipmunky/mushy, so keep the audible rate near 1.0 and fade out
+        // whatever we had to give up (tracked as `stretch`, in octaves).
+        node.rate = clamp(want, 0.62, 1.85);
+        node.stretch = Math.abs(Math.log2(node.rate / want));
+        node.src.playbackRate.setTargetAtTime(node.rate, now, tc);
       });
       applySampleGains(now, tc, loadS);
 
@@ -889,8 +914,8 @@
     // discover repo sample packs + user sounds, then restore selection
     loadSamplePacks().then(() => {
       if (SMP.packs[S.voiceKey]) activateSample(S.voiceKey);
+      else if (SMP.packs["smp:v8classic"]) selectVoice("smp:v8classic");
       else if (SMP.packs["smp:v8beast"]) selectVoice("smp:v8beast");
-      else if (SMP.packs["smp:v8race"]) selectVoice("smp:v8race");
       else {
         // nothing downloadable (offline first run) — synth keeps sound alive
         selectVoice("v8");
