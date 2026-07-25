@@ -91,7 +91,18 @@
     shiftAt: 0,          // timestamp of the last shift (for the shift punch)
     gpsWatchId: null,
     gpsOk: false,
+    // GPS arrives only ~1x/second. Between fixes we extrapolate from the
+    // last measured acceleration so the sound tracks the throttle instead
+    // of lagging up to a second behind it.
+    fixSpeed: 0,
+    fixAccel: 0,
+    lastFixAt: 0,
+    prevFixSpeed: 0,
+    prevFixAt: 0,
+    shiftDuck: 1,        // gain multiplier for the shift punch
+    limiterDuck: 1,      // gain multiplier for the rev limiter bounce
   };
+  const PREDICT_CAP = 1.2;   // never extrapolate further ahead than this (s)
 
   /* ---------------------------------------------------------------
      REAL SAMPLE PACKS — recorded engine loops, either shipped in the
@@ -455,8 +466,17 @@
   }
 
   function updatePhysics(dt) {
-    // Smooth incoming speed
-    S.speed += (S.rawSpeed - S.speed) * Math.min(1, dt * 4);
+    // Predict forward from the last fix. GPS reports about once a second,
+    // so without this the engine is always up to a second behind the
+    // throttle — the single biggest source of "it doesn't feel connected".
+    let aim = S.rawSpeed;
+    if (S.useGps && S.gpsOk && S.lastFixAt) {
+      const ahead = Math.min((performance.now() - S.lastFixAt) / 1000, PREDICT_CAP);
+      aim = clamp(S.fixSpeed + S.fixAccel * ahead, 0, 95);
+    }
+
+    // Smooth toward the (predicted) speed
+    S.speed += (aim - S.speed) * Math.min(1, dt * 6);
 
     // Acceleration measured over a ~1.2 s window. A frame-to-frame delta
     // is useless here: GPS only reports about once a second, so the
@@ -524,6 +544,33 @@
     }
     // idle wander
     if (S.rpm < IDLE_RPM + 40) S.rpm = IDLE_RPM + Math.sin(performance.now() / 220) * 18;
+
+    // ---- Shift punch -------------------------------------------------
+    // A real automatic momentarily unloads the engine on an upshift: the
+    // note drops and there's a brief hole in the sound, then it hooks up
+    // again. Reviewers praise the Ioniq 5 N for exactly this and panned
+    // Dodge's system for lacking it.
+    const sinceShift = (performance.now() - S.shiftAt) / 1000;
+    if (S.shiftAt && sinceShift < 0.32) {
+      const d = sinceShift < 0.07
+        ? 1 - (sinceShift / 0.07) * 0.45          // cut in fast
+        : 0.55 + ((sinceShift - 0.07) / 0.25) * 0.45; // ease back
+      S.shiftDuck = clamp(d, 0.4, 1);
+    } else {
+      S.shiftDuck += (1 - S.shiftDuck) * Math.min(1, dt * 8);
+    }
+
+    // ---- Rev limiter --------------------------------------------------
+    // Bounce off the redline instead of pinning against it: fuel cuts in
+    // bursts, so the note stutters and the revs bounce back down.
+    const nearLimit = S.rpm > REDLINE - 220 && S.throttle > 0.55;
+    if (nearLimit) {
+      const bounce = Math.sin(performance.now() / 1000 * 2 * Math.PI * 11);
+      S.limiterDuck = bounce > 0 ? 0.35 : 1;
+      if (bounce > 0) S.rpm -= (REDLINE * 0.05) * dt * 12; // kick it back down
+    } else {
+      S.limiterDuck += (1 - S.limiterDuck) * Math.min(1, dt * 10);
+    }
   }
 
   function engineRpmFor(speed, gi) {
@@ -536,9 +583,12 @@
     const now = ctx.currentTime;
     const loadS = clamp(S.throttle, 0, 1);
 
-    // Master volume + boost — shared by synth and sample engines
-    const vol = S.volume * (S.boost ? 1.5 : 1.0);
-    A.master.gain.setTargetAtTime(S.power ? vol : 0.0001, now, 0.05);
+    // Master volume + boost — shared by synth and sample engines.
+    // shiftDuck/limiterDuck are the momentary holes punched by an upshift
+    // and by the rev limiter; both use a short time-constant so the edge
+    // stays audible rather than being smoothed into a fade.
+    const vol = S.volume * (S.boost ? 1.5 : 1.0) * S.shiftDuck * S.limiterDuck;
+    A.master.gain.setTargetAtTime(S.power ? vol : 0.0001, now, 0.012);
     A.comp.ratio.setTargetAtTime(S.boost ? 8 : 2, now, 0.1);
     A.comp.threshold.setTargetAtTime(S.boost ? -30 : -18, now, 0.1);
     A.hpf.frequency.setTargetAtTime(S.boost ? 130 : 20, now, 0.1);
@@ -702,8 +752,23 @@
         setSrc(true);
         let sp = pos.coords.speed; // m/s, may be null
         if (sp == null || isNaN(sp) || sp < 0) sp = deriveSpeedFrom(pos);
-        S.rawSpeed = clamp(sp, 0, 90); // ignore absurd fixes (~200 mph cap)
-        S.lastFixAt = performance.now();
+        sp = clamp(sp, 0, 90); // ignore absurd fixes (~200 mph cap)
+
+        // Measure acceleration between fixes so we can extrapolate forward
+        // until the next one lands.
+        const nowMs = performance.now();
+        if (S.lastFixAt) {
+          const gap = (nowMs - S.lastFixAt) / 1000;
+          if (gap > 0.15 && gap < 4) {
+            const a = (sp - S.fixSpeed) / gap;
+            // light smoothing — a single noisy fix shouldn't swing the ramp
+            S.fixAccel = S.fixAccel * 0.35 + clamp(a, -8, 8) * 0.65;
+          }
+        }
+        S.prevFixSpeed = S.fixSpeed; S.prevFixAt = S.lastFixAt;
+        S.fixSpeed = sp;
+        S.rawSpeed = sp;
+        S.lastFixAt = nowMs;
         // Engaging GPS mid-drive must not start in 1st and climb: that
         // slammed the engine to redline for a couple of seconds. Snap
         // straight to a sane gear for the speed we're already doing.
