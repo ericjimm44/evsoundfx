@@ -58,12 +58,17 @@
   ---------------------------------------------------------------- */
   const IDLE_RPM = 780;
   const REDLINE = 6800;
-  // engine-rpm added per (m/s) of road speed, per gear. Evenly spaced
-  // ~1.44 ratio steps (the old set had a 1.88 jump into top, which put an
-  // audible rpm cliff at highway speed). 7 speeds keeps a relaxed
-  // ~3,000 rpm cruise at 70 mph.
-  const GEARS = [640, 445, 310, 216, 150, 105, 73];
-  const SHIFT_COOLDOWN = 600; // ms between shifts
+  // engine-rpm added per (m/s) of road speed, per gear.
+  const GEARS = [408, 242, 162, 116, 91, 54];
+
+  // Road speed (m/s) at which each gear hands off to the next, when driven
+  // gently. Gears are chosen from SPEED, not rpm, because that is what a
+  // driver actually expects to see: roughly 14 mph for 1st->2nd, 24 for
+  // 2nd->3rd, 36 for 3rd->4th, 50 for 4th->5th, 64 for 5th->6th. So 30 mph
+  // sits in 3rd and 40 mph in 4th, instead of already being in top.
+  const UPSHIFT_MPS = [6.3, 10.7, 16.1, 22.4, 28.6];
+  const DOWNSHIFT_FRAC = 0.72;  // hysteresis gap, as a fraction of the up point
+  const SHIFT_COOLDOWN = 600;   // ms between shifts
 
   /* ---------------------------------------------------------------
      STATE
@@ -518,17 +523,18 @@
       // react fast; gear selection must not, or a single GPS blip shifts.
       S.gearLoad += (target - S.gearLoad) * Math.min(1, dt * 0.7);
 
-      // Hysteresis gearbox: upshift above one rpm, downshift below a much
-      // lower one. The gap is wider than a gear step, so a shift can never
-      // immediately trigger its own reverse — no hunting at steady speed.
-      const upAt = (S.sport ? 3400 : 2400) + S.gearLoad * (S.sport ? 3200 : 3400);
-      const downAt = (S.sport ? 1700 : 1250) + S.gearLoad * 1500;
-      const curRpm = engineRpmFor(S.speed, S.gear - 1);
+      // Speed-based gearbox with hysteresis. Throttle stretches every
+      // handoff point, so a gentle drive short-shifts and a hard pull
+      // holds each gear out toward the redline. The downshift point sits
+      // well below the upshift point, so a shift can never immediately
+      // trigger its own reverse — no hunting at steady speed.
+      const stretch = 1 + S.gearLoad * (S.sport ? 1.25 : 1.05);
+      const gi = S.gear - 1;
       const canShift = (performance.now() - S.lastShift) > SHIFT_COOLDOWN;
       if (canShift) {
-        if (curRpm > upAt && S.gear < GEARS.length) {
+        if (gi < UPSHIFT_MPS.length && S.speed > UPSHIFT_MPS[gi] * stretch) {
           S.gear++; S.lastShift = performance.now(); S.shiftAt = performance.now();
-        } else if (curRpm < downAt && S.gear > 1) {
+        } else if (gi > 0 && S.speed < UPSHIFT_MPS[gi - 1] * stretch * DOWNSHIFT_FRAC) {
           S.gear--; S.lastShift = performance.now(); S.shiftAt = performance.now();
         }
       }
@@ -776,8 +782,8 @@
           S.speed = S.rawSpeed;
           S.accelHist = [];
           S.gear = 1;
-          for (let g = GEARS.length - 1; g >= 0; g--) {
-            if (engineRpmFor(S.rawSpeed, g) >= 1800) { S.gear = g + 1; break; }
+          for (let g = 0; g < UPSHIFT_MPS.length; g++) {
+            if (S.rawSpeed > UPSHIFT_MPS[g]) S.gear = g + 2;
           }
           S.rpm = engineRpmFor(S.rawSpeed, S.gear - 1);
         }
