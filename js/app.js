@@ -915,7 +915,7 @@
     loadSamplePacks().then(() => {
       if (SMP.packs[S.voiceKey]) activateSample(S.voiceKey);
       else if (SMP.packs["smp:v8classic"]) selectVoice("smp:v8classic");
-      else if (SMP.packs["smp:v8beast"]) selectVoice("smp:v8beast");
+      else if (SMP.packs["smp:hotrod"]) selectVoice("smp:hotrod");
       else {
         // nothing downloadable (offline first run) — synth keeps sound alive
         selectVoice("v8");

@@ -1,7 +1,7 @@
 {
   "_how": "List real engine loops here and they appear as voices in the app on every device. Put the audio files (MP3/WAV/OGG) in this samples/ folder. Each voice needs one or more loops; several loops recorded at different RPMs crossfade for extra realism.",
   "_rpm_rule": "CRITICAL: 'rpm' is not a label, it is the denominator of the pitch shift (playbackRate = currentRPM / loop.rpm). The RATIO between two loops' rpm values must equal the RATIO of their actual recorded pitches, or the crossfade plays the same engine at two pitches at once. These values were derived by measuring each clip's true firing frequency and are ratio-exact. Do NOT 'spread them out' to cover more revs — that is exactly what caused the 7–12 semitone crossfade dissonance in earlier versions.",
-  "_credits": "classic_*.wav: 'Generic V8 Engine Sound' by DerMeehdrescher / Meehdrescher Studios, opengameart.org/content/generic-v8-engine-sound, CC-BY-SA 4.0. beast_*.wav: 'v8 engine rev' by overmedium, Freesound #651534, CC0. oh_*.wav: 'Open header V8 cars idling and revving' by holderall, Freesound #432508, CC0. tbody_*.wav: 'Car Engine Loop 96kHz' by qubodup, opengameart.org/content/car-engine-loop-96khz-4s, CC-BY 3.0. jet_*.wav: 'jet_engine' by minian89, Freesound #152509, CC0. ev_*.wav: 'Sci-Fi Sound Effects Library' by Little Robot Sound Factory (www.littlerobotsoundfactory.com), opengameart.org/content/sci-fi-sound-effects-library, CC-BY 3.0. All loops rebuilt with pitch-synchronous circular overlap-add (seamless loop point), DC removal, per-cycle jitter and BS.1770 loudness matching to -20 LUFS.",
+  "_credits": "classic_*.wav: 'Generic V8 Engine Sound' by DerMeehdrescher / Meehdrescher Studios, opengameart.org/content/generic-v8-engine-sound, CC-BY-SA 4.0. hotrod_*.wav: 'V-8 HotRod Approach Rev Ups Drive Past' by Ears68, Freesound #213977, CC0. kart_*.wav: 'Go Kart Racing' by qubodup, Freesound #189622, CC0. oh_*.wav: 'Open header V8 cars idling and revving' by holderall, Freesound #432508, CC0. tbody_*.wav: 'Car Engine Loop 96kHz' by qubodup, opengameart.org/content/car-engine-loop-96khz-4s, CC-BY 3.0. jet_*.wav: 'jet_engine' by minian89, Freesound #152509, CC0. ev_*.wav: 'Sci-Fi Sound Effects Library' by Little Robot Sound Factory (www.littlerobotsoundfactory.com), opengameart.org/content/sci-fi-sound-effects-library, CC-BY 3.0. All loops rebuilt with pitch-synchronous circular overlap-add (seamless loop point), DC removal, per-cycle jitter and BS.1770 loudness matching to -20 LUFS.",
   "voices": [
     {
       "key": "v8classic",
@@ -14,14 +14,23 @@
       ]
     },
     {
-      "key": "v8beast",
-      "name": "V8 Beast",
+      "key": "hotrod",
+      "name": "V8 Hot Rod",
       "emoji": "🔥",
-      "_measured": "65.91 / 72.14 / 92.15 Hz. The set spans only 1.40x but was tagged 850–5400 (6.35x), so every crossfade played the same V8 up to an OCTAVE apart. beast_low dropped: it was within 1.7% of beast_idle, so crossfading them combed rather than varied.",
+      "_measured": "Two stable operating points of the SAME hot rod V8 on the same mic: 64.38 Hz and 91.68 Hz, ratio 1.4241 (tags below are exact to that). Replaces V8 Beast, which measured worse on every axis — 95% of its energy below 190 Hz, crest 2.4, and no stable pitch in its top layer. This source is brighter (23–25% of energy under 100 Hz) with crest 3.5–3.7, i.e. real exhaust transients.",
       "loops": [
-        { "file": "beast_idle.wav", "rpm": 1950 },
-        { "file": "beast_mid.wav",  "rpm": 2130 },
-        { "file": "beast_high.wav", "rpm": 2720 }
+        { "file": "hotrod_low.wav",  "rpm": 1800 },
+        { "file": "hotrod_high.wav", "rpm": 2563 }
+      ]
+    },
+    {
+      "key": "gokart",
+      "name": "Go Kart",
+      "emoji": "🏁",
+      "_measured": "Outdoor kart racing — like Open Header this is multi-vehicle, so it has no single firing frequency and the tags order it by brightness instead (zero-crossing rate 1135 Hz vs 1410 Hz, ratio 1.242). Buzzy two-stroke character, crest 3.1.",
+      "loops": [
+        { "file": "kart_low.wav",  "rpm": 2200 },
+        { "file": "kart_high.wav", "rpm": 2733 }
       ]
     },
     {
