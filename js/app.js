@@ -387,12 +387,20 @@
 
   /* ---------------------------------------------------------------
      PER-FRAME UPDATE: physics + audio parameter mapping
-  ---------------------------------------------------------------- */
-  let rafId = null, lastT = 0;
 
-  function frame(t) {
-    rafId = requestAnimationFrame(frame);
-    const now = t / 1000;
+     Driven by setInterval, NOT requestAnimationFrame: browsers stop
+     calling rAF entirely for a backgrounded page, which would freeze the
+     engine mid-rev the moment the driver switches to Nav. Pages playing
+     audible audio are exempt from timer throttling, so an interval keeps
+     running. A separate rAF pass handles the gauges (no point repainting
+     a hidden screen).
+  ---------------------------------------------------------------- */
+  let tickId = null, gaugeRaf = null, lastT = 0;
+  const TICK_MS = 1000 / 60;
+
+  // Engine tick — must keep running even when the page is hidden.
+  function frame() {
+    const now = performance.now() / 1000;
     let dt = now - lastT;
     lastT = now;
     if (!ctx) return;
@@ -400,7 +408,12 @@
 
     updatePhysics(dt);
     updateAudio();
-    updateUI();
+  }
+
+  // Gauges — visual only, so rAF (which pauses when hidden) is correct.
+  function paintGauges() {
+    gaugeRaf = requestAnimationFrame(paintGauges);
+    if (ctx) updateUI();
   }
 
   function updatePhysics(dt) {
@@ -826,7 +839,14 @@
     });
     requestWake();
     lastT = performance.now() / 1000;
-    rafId = requestAnimationFrame(frame);
+    tickId = setInterval(frame, TICK_MS);
+    gaugeRaf = requestAnimationFrame(paintGauges);
+
+    // Some browsers suspend the AudioContext when a tab is backgrounded;
+    // resume as soon as we're visible again so sound returns instantly.
+    document.addEventListener("visibilitychange", () => {
+      if (document.visibilityState === "visible" && ctx && ctx.state === "suspended") ctx.resume();
+    });
   }
 
   // init

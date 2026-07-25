@@ -1,32 +1,32 @@
 # EV Roar — engine sound for your (silent) EV
 
-A tiny web app that gives an electric car a voice. It **synthesizes an engine
-sound in real time** and makes it rise, shift, and settle with your **actual
-GPS speed** — a from-scratch, no-subscription recreation of the idea behind
-*EVsoundfx.com*, built to run in the **Tesla browser** through the car speakers.
+A tiny web app that gives an electric car a voice. It plays **real recorded
+engine sound** that rises, shifts, and settles with your **actual GPS speed** —
+a from-scratch, no-subscription recreation of the idea behind *EVsoundfx.com*,
+built to run in the **Tesla browser** through the car speakers.
 
-Everything is generated live with the Web Audio API. There are **no sound
-files**, no accounts, and no network calls — so it installs as an offline PWA
-and every "voice" is free.
+No accounts, no subscription, no backend. It installs as an offline PWA and
+every voice is free.
 
 ## Voices — all real recordings
 
 | Voice | Character |
 | --- | --- |
-| 🏎️ **V8 Racer** *(default)* | Race-engine recording, three rpm layers crossfading |
+| 🔥 **V8 Beast** *(default)* | Close-mic'd V8 — four layers from one engine, idle to scream |
+| 💥 **Open Header** | Unmuffled parade V8s, raw and crackly |
+| 🏎️ **V8 Racer** | Race-engine recording, three rpm layers crossfading |
 | 🚗 **V8 Classic** | Burbly V8 — decel loop low, accelerating loop high |
-| 🌀 **Turbo Sport** | Real 4-cylinder screamer in three pitch-baked layers |
+| 🌀 **Turbo Sport** | Steady 4-cylinder body + a live turbo whistle that spools with revs |
 | 🛸 **Spaceship EV** | Deep motor throb blending into a smooth sci-fi hum |
-| ✈️ **Jet Turbine** | Low spool-up rumble rising into a bright turbine whine |
+| ✈️ **Jet Turbine** | Four layers along one real turbine spool-up, to a full scream |
 
 Sources and licenses in [`samples/README.md`](samples/README.md). A hidden
 synthesized engine remains as an offline fallback only — it plays when no
 recording can be downloaded, and never appears in the voice list.
 
-## Real recorded sounds (new)
+## Adding your own sounds
 
-The synth voices are generated from math; for the sound of an *actual* car,
-add **recorded engine loops**:
+Beyond the built-in voices, you can add **any engine loop you like**:
 
 - **➕ Add sound** chip in the app — load an MP3/WAV from the device; it's
   kept on-device and pitch-follows your speed.
@@ -85,5 +85,6 @@ https://<your-username>.github.io/evsoundfx/
 
 ## Stack
 
-Vanilla HTML/CSS/JS + Web Audio API. Installable, offline-first PWA. ~0 KB of
-audio assets — the engine is math.
+Vanilla HTML/CSS/JS + Web Audio API. Installable, offline-first PWA, no build
+step and no backend. Recorded loops are pitch-tracked and crossfaded live; the
+gearbox, turbo whistle, and sub-bass body are computed per frame.
