@@ -76,7 +76,7 @@
   const S = {
     started: false,
     power: true,
-    voiceKey: "smp:v8classic", // real recording by default; falls back to synth offline
+    voiceKey: "smp:jdm", // default voice; falls back to the built-in synth offline
     sport: false,
     boost: false,
     useGps: false,
@@ -986,7 +986,7 @@
     loadSamplePacks().then(() => {
       if (SMP.packs[S.voiceKey]) activateSample(S.voiceKey);
       else if (SMP.packs["smp:v8classic"]) selectVoice("smp:v8classic");
-      else if (SMP.packs["smp:hotrod"]) selectVoice("smp:hotrod");
+      else if (SMP.packs["smp:jdm"]) selectVoice("smp:jdm");
       else {
         // nothing downloadable (offline first run) — synth keeps sound alive
         selectVoice("v8");

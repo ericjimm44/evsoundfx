@@ -4,13 +4,11 @@
 
 | Voice | Files | Source | License |
 | --- | --- | --- | --- |
-| 🔥 V8 Beast | `beast_idle/low/mid/high.wav` | ["v8 engine rev" by overmedium (Freesound #651534)](https://freesound.org/people/overmedium/sounds/651534/) — four matched layers cut from one binaural recording | **CC0** (public domain) |
-| 💥 Open Header | `oh_low/high.wav` | ["Open header V8 cars idling and revving" by holderall (Freesound #432508)](https://freesound.org/people/holderall/sounds/432508/) | **CC0** (public domain) |
-| 🏎️ V8 Racer | `race_low/mid/high.wav` | ["racing car engine sound loops" by domasx2](https://opengameart.org/content/racing-car-engine-sound-loops) | **CC0** (public domain) |
 | 🚗 V8 Classic | `classic_low/high.wav` | ["Generic V8 Engine Sound" by DerMeehdrescher / Meehdrescher Studios](https://opengameart.org/content/generic-v8-engine-sound) | **CC-BY-SA 4.0** |
-| 🌀 Turbo Sport | `tbody_low/high.wav` + synth whistle | steady 4-cyl body: ["Car Engine Loop 96kHz" by qubodup](https://opengameart.org/content/car-engine-loop-96khz-4s); turbo whistle synthesized live in-app | **CC-BY 3.0** |
-| 🛸 Spaceship EV | `ev_low.wav`, `ev_hum.wav` | ["Sci-Fi Sound Effects Library" by Little Robot Sound Factory](https://opengameart.org/content/sci-fi-sound-effects-library) — [littlerobotsoundfactory.com](https://www.littlerobotsoundfactory.com) | **CC-BY 3.0** |
-| ✈️ Jet Turbine | `jet_idle/low/mid/high.wav` | ["jet_engine" by minian89 (Freesound #152509)](https://freesound.org/people/minian89/sounds/152509/) — four layers cut along one real turbine spool-up | **CC0** (public domain) |
+| 🌀 Turbo Sport | `tbody_low.wav` | ["Car Engine Loop 96kHz" by qubodup](https://opengameart.org/content/car-engine-loop-96khz-4s) | **CC-BY 3.0** |
+
+`jdm_*.wav` (JDM Turbo) and `evh_*.wav` (EV Hyper) are **synthesized in-house**
+by [`../tools/`](../tools/) and carry no third-party rights.
 
 All loops were lightly processed (mono/resample/normalize plus a ~12–15 ms
 crossfade at the loop seam so they cycle without clicks). CC-BY files require
@@ -18,9 +16,10 @@ the attribution above; the CC-BY-SA files remain under
 [CC-BY-SA 4.0](https://creativecommons.org/licenses/by-sa/4.0/) — keep the
 credits if you redistribute.
 
-The app's built-in voices are synthesized. Drop **recorded engine loops** in
-this folder to get the real thing — the app pitch-bends each loop to the live
-RPM and crossfades between loops, which sounds far more like an actual car.
+## Adding more
+
+Drop your own engine loops in this folder — the app pitch-tracks each loop to
+the live RPM and crossfades between them.
 
 ## Quickest way (no repo needed)
 
@@ -52,7 +51,11 @@ It's stored on that device (IndexedDB) and shows up as a new voice.
 }
 ```
 
-- `rpm` = the engine speed the clip was recorded at (estimate is fine).
+- `rpm` is **not a label** — it is the denominator of the pitch shift
+  (`playbackRate = currentRPM / loop.rpm`). Two loops only agree in pitch if
+  their rpm values are in the same ratio as their *actual* recorded pitches.
+  Getting this wrong is what made every voice sound detuned in earlier
+  versions, so measure rather than guess.
 - One loop works; **three loops at different RPMs sounds dramatically better**
   because pitch-shifting a single clip too far sounds chipmunky/droney.
 - Reload the app once after uploading (the service worker fetches
