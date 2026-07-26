@@ -73,7 +73,7 @@
       "key": "v12",
       "name": "V12",
       "emoji": "🏎️",
-      "_measured": "Synthesized V12, 4-stroke: 12 cylinders over 2 crank revolutions = 6 combustion events per revolution, evenly spaced (a V12 is the smoothest common layout). Formants (140/400/900/1900/3400/5200 Hz) are weighted toward the upper mids because a V12's signature is its high wail, not low-end thump — there is far more energy above 1 kHz here than in the V8 or inline-4. Four layers cover 1000-6500 rpm with tags exact by construction.",
+      "_measured": "Synthesized V12, 4-stroke: 12 cylinders over 2 crank revolutions = 6 combustion events per revolution, evenly spaced (the smoothest common layout). Formants run to 7 kHz and are weighted hard toward the upper mids, because a V12's signature is its wail rather than low-end thump: 30% of the top layer's energy sits above 1 kHz, against 25% for the flatter first version. Crest factor stays at 3.2 (real engine recordings measure 3.1-3.7). Four layers cover 1000-6500 rpm with tags exact by construction.",
       "loops": [
         {
           "file": "v12_idle.wav",

@@ -49,6 +49,6 @@ build("Turbo Sport", 2,
 #     revolution, the smoothest common layout. Formants weighted toward the
 #     upper mids because a V12's signature is its high wail, not low thump.
 build("V12", 6,
-      [(140,1.8,0.85),(400,1.7,0.80),(900,1.6,0.72),(1900,1.5,0.56),(3400,1.4,0.34),(5200,1.3,0.17)],
+      [(140,1.8,0.45),(400,1.7,0.58),(900,1.7,0.80),(1900,1.6,0.95),(3400,1.5,0.80),(5200,1.4,0.55),(7000,1.3,0.30)],
       [("v12_idle.wav",1000),("v12_low.wav",2500),("v12_mid.wav",4500),("v12_high.wav",6500)],
       noise=0.03, jitter=0.005, pulse_w=0.0007, secs=3.0, seed0=201)
