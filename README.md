@@ -23,6 +23,14 @@ third-party rights. A hidden synthesized engine also remains as an offline
 fallback — it plays only when no loop can be downloaded, and never appears in
 the voice list.
 
+## Bass
+
+The **Bass** slider controls a sub-bass layer that tracks engine rpm in the
+28–85 Hz band — the part you feel in the seat rather than hear. It deliberately
+bypasses the compressor: routed through it, every engine pulse ducked the bass
+and it never felt solid. Exterior Boost strips it automatically, since small
+Bluetooth speakers can't reproduce it anyway.
+
 ## Adding your own sounds
 
 Beyond the built-in voices, you can add **any engine loop you like**:

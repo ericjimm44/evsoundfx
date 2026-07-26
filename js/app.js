@@ -82,6 +82,7 @@
     useGps: false,
     units: "mph",
     volume: 0.7,
+    bass: 0.6,           // 0..1 sub-bass amount (the "feel it" control)
     manualThrottle: 0,   // 0..1 from slider
     // live
     speed: 0,            // m/s (smoothed)
@@ -199,6 +200,7 @@
     if (!ctx) return;
     SMP.bus.gain.setTargetAtTime(0, ctx.currentTime, 0.1);
     SMP.subGain.gain.setTargetAtTime(0, ctx.currentTime, 0.1);
+    SMP.sub2Gain.gain.setTargetAtTime(0, ctx.currentTime, 0.1);
     SMP.whistleGain.gain.setTargetAtTime(0, ctx.currentTime, 0.1);
     SMP.whistleOn = false;
     A.engineBus.gain.setTargetAtTime(1, ctx.currentTime, 0.15);
@@ -331,7 +333,18 @@
     A.lpf.connect(A.comp);
     A.comp.connect(A.hpf);
     A.hpf.connect(A.master);
-    A.master.connect(ctx.destination);
+
+    // Final safety limiter. The sub layer deliberately bypasses A.comp, so
+    // nothing else guarantees the sum stays under full scale — without this,
+    // heavy bass plus a loud engine would clip and buzz.
+    A.safety = ctx.createDynamicsCompressor();
+    A.safety.threshold.value = -1.5;
+    A.safety.knee.value = 0;
+    A.safety.ratio.value = 20;
+    A.safety.attack.value = 0.002;
+    A.safety.release.value = 0.12;
+    A.master.connect(A.safety);
+    A.safety.connect(ctx.destination);
 
     // Sample-pack bus — recorded loops get their own tone filter (darker
     // off-throttle, brighter on it) and a sub-bass layer for body, then
@@ -352,15 +365,31 @@
     SMP.dcBlock.connect(SMP.lpf);
     SMP.lpf.connect(A.comp);
 
-    // deep rpm-tracking sine under the recordings — the chest-thump
-    // that thin source clips are missing
+    // Deep rpm-tracking sub — the part you feel rather than hear.
+    // Two oscillators: a sine carrying the real low-frequency energy for a
+    // proper subwoofer, plus a quiet octave-up triangle so there's still
+    // something perceptible on speakers that can't reproduce 40 Hz.
+    // Critically this bypasses A.comp — routed through the compressor, every
+    // engine pulse ducked the bass, which is why it never felt solid.
     SMP.sub = ctx.createOscillator();
     SMP.sub.type = "sine";
     SMP.subGain = ctx.createGain();
     SMP.subGain.gain.value = 0;
     SMP.sub.connect(SMP.subGain);
-    SMP.subGain.connect(A.comp);
+
+    SMP.sub2 = ctx.createOscillator();
+    SMP.sub2.type = "triangle";
+    SMP.sub2Gain = ctx.createGain();
+    SMP.sub2Gain.gain.value = 0;
+    SMP.sub2.connect(SMP.sub2Gain);
+
+    // Both join after the compressor but before the exterior-boost high-pass,
+    // so Exterior Boost still strips the bass small Bluetooth speakers can't
+    // reproduce, automatically.
+    SMP.subGain.connect(A.hpf);
+    SMP.sub2Gain.connect(A.hpf);
     SMP.sub.start();
+    SMP.sub2.start();
 
     // Synthesized turbo whistle — a bandpassed tone that glides up with
     // rpm. Only enabled for voices flagged whistle:true. Because it moves
@@ -622,9 +651,17 @@
       // tone: darker when coasting, opens up on throttle and revs
       SMP.lpf.frequency.setTargetAtTime(clamp(1100 + rev * 5200 + loadS * 3200, 900, 11000), now, 0.06);
       // sub-bass body: strongest low in the rev range and on throttle
-      SMP.sub.frequency.setTargetAtTime(clamp((S.rpm / 60) * 2, 25, 130), now, tc);
-      SMP.subGain.gain.setTargetAtTime(
-        S.power && !S.boost ? (0.05 + loadS * 0.09) * (1 - rev * 0.5) : 0, now, 0.08);
+      // Sub-bass. Held inside roughly 28-85 Hz — the band you feel in your
+      // chest and seat rather than hear — instead of tracking up into the
+      // low mids where it stops being physical. It no longer fades as revs
+      // rise (it used to drop by half at redline, exactly backwards), and
+      // it leans on throttle so hard acceleration hits hardest.
+      const subF = clamp((S.rpm / 60) * 2, 28, 85);
+      SMP.sub.frequency.setTargetAtTime(subF, now, tc);
+      SMP.sub2.frequency.setTargetAtTime(subF * 2, now, tc);
+      const subLvl = S.power ? S.bass * (0.34 + loadS * 0.30) * (0.85 + rev * 0.15) : 0;
+      SMP.subGain.gain.setTargetAtTime(subLvl, now, 0.08);
+      SMP.sub2Gain.gain.setTargetAtTime(subLvl * 0.22, now, 0.08);
       // turbo whistle: pitch tracks rpm, comes in as you rev/load up
       if (SMP.whistleOn) {
         const wf = clamp((S.rpm / 60) * 7, 500, 4800);
@@ -658,7 +695,7 @@
     // Layer levels — throttle brings in growl & noise (that "on-power" snarl)
     const base = 0.22 + rev * 0.18;
     A.oscGain.gain.setTargetAtTime(v.tone * (0.28 + rev * 0.22), now, tc);
-    A.subGain.gain.setTargetAtTime(v.sub * (0.30 + (1 - rev) * 0.12), now, tc);
+    A.subGain.gain.setTargetAtTime(v.sub * (0.30 + (1 - rev) * 0.12) * (0.5 + S.bass), now, tc);
     A.growlGain.gain.setTargetAtTime(v.growl * (0.05 + load * 0.42), now, tc);
     A.noiseGain.gain.setTargetAtTime(v.noise * (0.03 + load * 0.30 + rev * 0.10), now, tc);
 
@@ -875,7 +912,7 @@
     try {
       localStorage.setItem("evroar", JSON.stringify({
         voiceKey: S.voiceKey, sport: S.sport, boost: S.boost,
-        units: S.units, volume: S.volume,
+        units: S.units, volume: S.volume, bass: S.bass,
       }));
     } catch (e) {}
   }
@@ -888,6 +925,7 @@
       if (typeof j.boost === "boolean") S.boost = j.boost;
       if (j.units) S.units = j.units;
       if (typeof j.volume === "number") S.volume = j.volume;
+      if (typeof j.bass === "number") S.bass = j.bass;
     } catch (e) {}
   }
 
@@ -906,6 +944,11 @@
     el("volume").value = Math.round(S.volume * 100);
     el("volume").addEventListener("input", (e) => {
       S.volume = e.target.value / 100; save();
+    });
+
+    el("bass").value = Math.round(S.bass * 100);
+    el("bass").addEventListener("input", (e) => {
+      S.bass = e.target.value / 100; save();
     });
 
     el("throttle").addEventListener("input", (e) => {
