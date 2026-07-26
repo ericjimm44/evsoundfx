@@ -5,10 +5,12 @@
 | Voice | Files | Source | License |
 | --- | --- | --- | --- |
 | 🚗 V8 Classic | `classic_low/high.wav` | ["Generic V8 Engine Sound" by DerMeehdrescher / Meehdrescher Studios](https://opengameart.org/content/generic-v8-engine-sound) | **CC-BY-SA 4.0** |
-| 🌀 Turbo Sport | `tbody_low.wav` | ["Car Engine Loop 96kHz" by qubodup](https://opengameart.org/content/car-engine-loop-96khz-4s) | **CC-BY 3.0** |
 
-`jdm_*.wav` (JDM Turbo) and `evh_*.wav` (EV Hyper) are **synthesized in-house**
-by [`../tools/`](../tools/) and carry no third-party rights.
+`jdm_*.wav` (JDM Turbo), `turbo_*.wav` (Turbo Sport) and `evh_*.wav` (EV Hyper)
+are **synthesized in-house** by [`../tools/`](../tools/) and carry no
+third-party rights. Turbo Sport's resonances were measured from the recorded
+loop it previously used, so it kept that character while gaining full
+rev-range coverage.
 
 All loops were lightly processed (mono/resample/normalize plus a ~12–15 ms
 crossfade at the loop seam so they cycle without clicks). CC-BY files require

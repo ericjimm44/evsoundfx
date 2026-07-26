@@ -1,7 +1,7 @@
 {
   "_how": "List engine loops here and they appear as voices in the app on every device. Put the audio files (MP3/WAV/OGG) in this samples/ folder. Each voice needs one or more loops; several loops at different RPMs crossfade for extra realism.",
   "_rpm_rule": "CRITICAL: 'rpm' is not a label, it is the denominator of the pitch shift (playbackRate = currentRPM / loop.rpm). The RATIO between two loops' rpm values must equal the RATIO of their actual pitches, or the crossfade plays the same engine at two pitches at once. For recorded loops these values are measured; for synthesized loops they are exact by construction.",
-  "_credits": "classic_*.wav: 'Generic V8 Engine Sound' by DerMeehdrescher / Meehdrescher Studios, opengameart.org/content/generic-v8-engine-sound, CC-BY-SA 4.0. tbody_*.wav: 'Car Engine Loop 96kHz' by qubodup, opengameart.org/content/car-engine-loop-96khz-4s, CC-BY 3.0. jdm_*.wav and evh_*.wav are synthesized in-house (see tools/) and carry no third-party rights.",
+  "_credits": "classic_*.wav: 'Generic V8 Engine Sound' by DerMeehdrescher / Meehdrescher Studios, opengameart.org/content/generic-v8-engine-sound, CC-BY-SA 4.0. jdm_*.wav, turbo_*.wav and evh_*.wav are synthesized in-house (see tools/) and carry no third-party rights.",
   "voices": [
     {
       "key": "jdm",
@@ -10,10 +10,22 @@
       "whistle": true,
       "_measured": "Synthesized inline-6, 4-stroke: 3 combustion events per crank revolution, evenly spaced (an I6 is inherently balanced — that smoothness is what separates a 2JZ/RB26 note from a lumpy V8). Rendered separately at each rpm through FIXED exhaust resonances (118/330/760/1680/3200 Hz), so the voice keeps one identity across the rev range instead of formant-shifting into a chipmunk. rpm tags are exact by construction; four layers cover 1000-6200 so playbackRate stays near 1.0 everywhere.",
       "loops": [
-        { "file": "jdm_idle.wav", "rpm": 1000 },
-        { "file": "jdm_low.wav",  "rpm": 2200 },
-        { "file": "jdm_mid.wav",  "rpm": 4000 },
-        { "file": "jdm_high.wav", "rpm": 6200 }
+        {
+          "file": "jdm_idle.wav",
+          "rpm": 1000
+        },
+        {
+          "file": "jdm_low.wav",
+          "rpm": 2200
+        },
+        {
+          "file": "jdm_mid.wav",
+          "rpm": 4000
+        },
+        {
+          "file": "jdm_high.wav",
+          "rpm": 6200
+        }
       ]
     },
     {
@@ -22,8 +34,14 @@
       "emoji": "🚗",
       "_measured": "classic_low = 46.40 Hz firing, classic_high = 92.84 Hz — exactly 2.00x apart (same engine, one octave up). Best recorded source in the pack: rock-stable pitch, harmonics out to 900 Hz.",
       "loops": [
-        { "file": "classic_low.wav",  "rpm": 1630 },
-        { "file": "classic_high.wav", "rpm": 3260 }
+        {
+          "file": "classic_low.wav",
+          "rpm": 1630
+        },
+        {
+          "file": "classic_high.wav",
+          "rpm": 3260
+        }
       ]
     },
     {
@@ -31,9 +49,24 @@
       "name": "Turbo Sport",
       "emoji": "🌀",
       "whistle": true,
-      "_measured": "Single recorded 4-cylinder body loop; the live turbo whistle carries the rev movement. Its former second loop was the same recording resampled, which comb-filtered rather than varied.",
+      "_measured": "Synthesized inline-4, 4-stroke: 2 combustion events per crank revolution, with slight cylinder-to-cylinder unevenness for the grit a four-pot has and an I6 doesn't. Formants (60/150/300/860/1000/2100 Hz) were MEASURED from tbody_low.wav — the recorded loop this voice used before — so it keeps that character; the 860 Hz peak is its rasp. Replaces that single recorded loop, which couldn't track revs and left the whistle doing the work. Four layers now cover 1000-6400 rpm with exact tags.",
       "loops": [
-        { "file": "tbody_low.wav", "rpm": 1940 }
+        {
+          "file": "turbo_idle.wav",
+          "rpm": 1000
+        },
+        {
+          "file": "turbo_low.wav",
+          "rpm": 2400
+        },
+        {
+          "file": "turbo_mid.wav",
+          "rpm": 4200
+        },
+        {
+          "file": "turbo_high.wav",
+          "rpm": 6400
+        }
       ]
     },
     {
@@ -42,10 +75,22 @@
       "emoji": "⚡",
       "_measured": "What an EV sounds like when it's given a voice of its own rather than a fake engine: motor and gear whine at electrical order 24 with inverter harmonics, through high-Q fixed resonances (430/900/1750/2900 Hz plus a 150 Hz body). Synthesized, so rpm tags are exact; four layers cover 1000-6500. Sings rather than pulses — the Taycan/Ioniq 5 N idea.",
       "loops": [
-        { "file": "evh_idle.wav", "rpm": 1000 },
-        { "file": "evh_low.wav",  "rpm": 2500 },
-        { "file": "evh_mid.wav",  "rpm": 4500 },
-        { "file": "evh_high.wav", "rpm": 6500 }
+        {
+          "file": "evh_idle.wav",
+          "rpm": 1000
+        },
+        {
+          "file": "evh_low.wav",
+          "rpm": 2500
+        },
+        {
+          "file": "evh_mid.wav",
+          "rpm": 4500
+        },
+        {
+          "file": "evh_high.wav",
+          "rpm": 6500
+        }
       ]
     }
   ]
