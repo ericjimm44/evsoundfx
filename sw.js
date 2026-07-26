@@ -6,7 +6,7 @@
    - Sound files (samples/*.wav etc): CACHE-FIRST — they're immutable
      (new packs use new filenames), so never re-download them.
 */
-const CACHE = "ev-roar-v6";
+const CACHE = "ev-roar-v7";
 const ASSETS = [
   ".",
   "index.html",

@@ -1,7 +1,7 @@
 {
   "_how": "List engine loops here and they appear as voices in the app on every device. Put the audio files (MP3/WAV/OGG) in this samples/ folder. Each voice needs one or more loops; several loops at different RPMs crossfade for extra realism.",
   "_rpm_rule": "CRITICAL: 'rpm' is not a label, it is the denominator of the pitch shift (playbackRate = currentRPM / loop.rpm). The RATIO between two loops' rpm values must equal the RATIO of their actual pitches, or the crossfade plays the same engine at two pitches at once. For recorded loops these values are measured; for synthesized loops they are exact by construction.",
-  "_credits": "classic_*.wav: 'Generic V8 Engine Sound' by DerMeehdrescher / Meehdrescher Studios, opengameart.org/content/generic-v8-engine-sound, CC-BY-SA 4.0. jdm_*.wav, turbo_*.wav and evh_*.wav are synthesized in-house (see tools/) and carry no third-party rights.",
+  "_credits": "classic_*.wav: 'Generic V8 Engine Sound' by DerMeehdrescher / Meehdrescher Studios, opengameart.org/content/generic-v8-engine-sound, CC-BY-SA 4.0. jdm_*.wav, turbo_*.wav and v12_*.wav are synthesized in-house (see tools/) and carry no third-party rights.",
   "voices": [
     {
       "key": "jdm",
@@ -70,25 +70,25 @@
       ]
     },
     {
-      "key": "evhyper",
-      "name": "EV Hyper",
-      "emoji": "⚡",
-      "_measured": "What an EV sounds like when it's given a voice of its own rather than a fake engine: motor and gear whine at electrical order 24 with inverter harmonics, through high-Q fixed resonances (430/900/1750/2900 Hz plus a 150 Hz body). Synthesized, so rpm tags are exact; four layers cover 1000-6500. Sings rather than pulses — the Taycan/Ioniq 5 N idea.",
+      "key": "v12",
+      "name": "V12",
+      "emoji": "🏎️",
+      "_measured": "Synthesized V12, 4-stroke: 12 cylinders over 2 crank revolutions = 6 combustion events per revolution, evenly spaced (a V12 is the smoothest common layout). Formants (140/400/900/1900/3400/5200 Hz) are weighted toward the upper mids because a V12's signature is its high wail, not low-end thump — there is far more energy above 1 kHz here than in the V8 or inline-4. Four layers cover 1000-6500 rpm with tags exact by construction.",
       "loops": [
         {
-          "file": "evh_idle.wav",
+          "file": "v12_idle.wav",
           "rpm": 1000
         },
         {
-          "file": "evh_low.wav",
+          "file": "v12_low.wav",
           "rpm": 2500
         },
         {
-          "file": "evh_mid.wav",
+          "file": "v12_mid.wav",
           "rpm": 4500
         },
         {
-          "file": "evh_high.wav",
+          "file": "v12_high.wav",
           "rpm": 6500
         }
       ]

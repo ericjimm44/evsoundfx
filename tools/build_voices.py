@@ -45,9 +45,10 @@ build("Turbo Sport", 2,
       noise=0.05, jitter=0.008, pulse_w=0.0012, secs=3.4,
       uneven=[1.0,0.94,1.03,0.97], seed0=77)
 
-# --- EV Hyper: not combustion. Motor/gear whine at electrical order 24 with
-#     inverter harmonics, high-Q resonances, so it sings instead of pulsing.
-build("EV Hyper", 24,
-      [(430,9.0,0.85),(900,8.0,0.70),(1750,7.0,0.52),(2900,6.0,0.32),(150,3.0,0.45)],
-      [("evh_idle.wav",1000),("evh_low.wav",2500),("evh_mid.wav",4500),("evh_high.wav",6500)],
-      noise=0.02, jitter=0.003, pulse_w=0.0004, secs=2.6, seed0=31)
+# --- V12: 12 cylinders over 2 crank revolutions = 6 combustion events per
+#     revolution, the smoothest common layout. Formants weighted toward the
+#     upper mids because a V12's signature is its high wail, not low thump.
+build("V12", 6,
+      [(140,1.8,0.85),(400,1.7,0.80),(900,1.6,0.72),(1900,1.5,0.56),(3400,1.4,0.34),(5200,1.3,0.17)],
+      [("v12_idle.wav",1000),("v12_low.wav",2500),("v12_mid.wav",4500),("v12_high.wav",6500)],
+      noise=0.03, jitter=0.005, pulse_w=0.0007, secs=3.0, seed0=201)

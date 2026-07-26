@@ -985,8 +985,8 @@
     // discover repo sample packs + user sounds, then restore selection
     loadSamplePacks().then(() => {
       if (SMP.packs[S.voiceKey]) activateSample(S.voiceKey);
-      else if (SMP.packs["smp:v8classic"]) selectVoice("smp:v8classic");
       else if (SMP.packs["smp:jdm"]) selectVoice("smp:jdm");
+      else if (SMP.packs["smp:v8classic"]) selectVoice("smp:v8classic");
       else {
         // nothing downloadable (offline first run) — synth keeps sound alive
         selectVoice("v8");
